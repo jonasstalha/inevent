@@ -2,6 +2,8 @@ import React from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { TrendingUp, DollarSign, Users, Calendar, Plus, ChevronRight } from 'lucide-react-native';
+import Ticket from '@/src/components/artist/Ticket'; // Make sure this import is correct!
+import Store from '@/src/components/artist/Store';
 
 import { useAuth } from '@/src/context/AuthContext';
 import { useApp } from '@/src/context/AppContext';

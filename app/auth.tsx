@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -31,7 +33,7 @@ export default function AuthScreen() {
   const handleLogin = async (values: { email: string; password: string }, { setSubmitting, setErrors }: any) => {
     try {
       await login(values.email, values.password);
-      // No need to navigate, root layout will handle redirection based on user role
+      // No need to navigate manually, the root layout handles redirect after auth
     } catch (error: any) {
       setErrors({ email: error.message });
     } finally {
@@ -45,7 +47,6 @@ export default function AuthScreen() {
   ) => {
     try {
       await register(values.email, values.password, values.name, values.role);
-      // No need to navigate, root layout will handle redirection based on user role
     } catch (error: any) {
       setErrors({ email: error.message });
     } finally {
@@ -53,13 +54,8 @@ export default function AuthScreen() {
     }
   };
 
-  const toggleMode = () => {
-    setIsLoginMode(!isLoginMode);
-  };
-
-  const goBack = () => {
-    router.back();
-  };
+  const toggleMode = () => setIsLoginMode(prev => !prev);
+  const goBack = () => router.back();
 
   return (
     <KeyboardAvoidingView 
@@ -74,12 +70,12 @@ export default function AuthScreen() {
           <TouchableOpacity onPress={goBack} style={styles.backButton}>
             <ArrowLeft size={24} color={Theme.colors.textDark} />
           </TouchableOpacity>
-          
+
           <Text style={styles.title}>{isLoginMode ? 'Welcome Back' : 'Create Account'}</Text>
           <Text style={styles.subtitle}>
             {isLoginMode ? 'Sign in to continue' : 'Sign up to get started'}
           </Text>
-          
+
           <Card variant="elevated" style={styles.card}>
             {isLoginMode ? (
               <Formik
@@ -100,7 +96,7 @@ export default function AuthScreen() {
                       onBlur={handleBlur('email')}
                       error={touched.email && errors.email ? errors.email : undefined}
                     />
-                    
+
                     <Input
                       label="Password"
                       placeholder="Enter your password"
@@ -111,7 +107,7 @@ export default function AuthScreen() {
                       onBlur={handleBlur('password')}
                       error={touched.password && errors.password ? errors.password : undefined}
                     />
-                    
+
                     <Button
                       title="Login"
                       onPress={handleSubmit}
@@ -124,7 +120,7 @@ export default function AuthScreen() {
               </Formik>
             ) : (
               <Formik
-                initialValues={{ name: '', email: '', password: '', role: 'client' as 'client' | 'artist' | 'admin' }}
+                initialValues={{ name: '', email: '', password: '', role: 'client' }}
                 validationSchema={RegisterSchema}
                 onSubmit={handleRegister}
               >
@@ -139,7 +135,7 @@ export default function AuthScreen() {
                       onBlur={handleBlur('name')}
                       error={touched.name && errors.name ? errors.name : undefined}
                     />
-                    
+
                     <Input
                       label="Email"
                       placeholder="Enter your email"
@@ -151,7 +147,7 @@ export default function AuthScreen() {
                       onBlur={handleBlur('email')}
                       error={touched.email && errors.email ? errors.email : undefined}
                     />
-                    
+
                     <Input
                       label="Password"
                       placeholder="Enter your password"
@@ -162,64 +158,33 @@ export default function AuthScreen() {
                       onBlur={handleBlur('password')}
                       error={touched.password && errors.password ? errors.password : undefined}
                     />
-                    
+
                     <Text style={styles.label}>I am a:</Text>
                     <View style={styles.roleContainer}>
-                      <TouchableOpacity
-                        style={[
-                          styles.roleButton,
-                          values.role === 'client' && styles.selectedRole,
-                        ]}
-                        onPress={() => setFieldValue('role', 'client')}
-                      >
-                        <Text
+                      {['client', 'artist', 'admin'].map(role => (
+                        <TouchableOpacity
+                          key={role}
                           style={[
-                            styles.roleText,
-                            values.role === 'client' && styles.selectedRoleText,
+                            styles.roleButton,
+                            values.role === role && styles.selectedRole,
                           ]}
+                          onPress={() => setFieldValue('role', role)}
                         >
-                          Client
-                        </Text>
-                      </TouchableOpacity>
-                      
-                      <TouchableOpacity
-                        style={[
-                          styles.roleButton,
-                          values.role === 'artist' && styles.selectedRole,
-                        ]}
-                        onPress={() => setFieldValue('role', 'artist')}
-                      >
-                        <Text
-                          style={[
-                            styles.roleText,
-                            values.role === 'artist' && styles.selectedRoleText,
-                          ]}
-                        >
-                          Artist
-                        </Text>
-                      </TouchableOpacity>
-                      
-                      <TouchableOpacity
-                        style={[
-                          styles.roleButton,
-                          values.role === 'admin' && styles.selectedRole,
-                        ]}
-                        onPress={() => setFieldValue('role', 'admin')}
-                      >
-                        <Text
-                          style={[
-                            styles.roleText,
-                            values.role === 'admin' && styles.selectedRoleText,
-                          ]}
-                        >
-                          Admin
-                        </Text>
-                      </TouchableOpacity>
+                          <Text
+                            style={[
+                              styles.roleText,
+                              values.role === role && styles.selectedRoleText,
+                            ]}
+                          >
+                            {role.charAt(0).toUpperCase() + role.slice(1)}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
                     </View>
                     {touched.role && errors.role && (
                       <Text style={styles.errorText}>{errors.role}</Text>
                     )}
-                    
+
                     <Button
                       title="Register"
                       onPress={handleSubmit}
@@ -232,7 +197,7 @@ export default function AuthScreen() {
               </Formik>
             )}
           </Card>
-          
+
           <View style={styles.toggleContainer}>
             <Text style={styles.toggleText}>
               {isLoginMode ? "Don't have an account?" : 'Already have an account?'}
@@ -248,12 +213,8 @@ export default function AuthScreen() {
 }
 
 const styles = StyleSheet.create({
-  keyboardAvoidingView: {
-    flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
+  keyboardAvoidingView: { flex: 1 },
+  scrollContent: { flexGrow: 1 },
   container: {
     flex: 1,
     padding: Theme.spacing.lg,
@@ -275,9 +236,7 @@ const styles = StyleSheet.create({
     color: Theme.colors.textLight,
     marginBottom: Theme.spacing.xl,
   },
-  card: {
-    width: '100%',
-  },
+  card: { width: '100%' },
   label: {
     fontFamily: Theme.typography.fontFamily.medium,
     fontSize: Theme.typography.fontSize.sm,
@@ -308,9 +267,7 @@ const styles = StyleSheet.create({
     fontSize: Theme.typography.fontSize.sm,
     color: Theme.colors.textDark,
   },
-  selectedRoleText: {
-    color: Theme.colors.secondary,
-  },
+  selectedRoleText: { color: Theme.colors.secondary },
   errorText: {
     fontFamily: Theme.typography.fontFamily.regular,
     fontSize: Theme.typography.fontSize.xs,
@@ -318,9 +275,7 @@ const styles = StyleSheet.create({
     marginTop: -Theme.spacing.sm,
     marginBottom: Theme.spacing.sm,
   },
-  submitButton: {
-    marginTop: Theme.spacing.md,
-  },
+  submitButton: { marginTop: Theme.spacing.md },
   toggleContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
