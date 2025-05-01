@@ -73,7 +73,7 @@ export default function ClientTabLayout() {
       <Tabs.Screen
         name="tickets"
         options={{
-          title: 'Tickets',
+          title: 'tickets',
           tabBarIcon: ({ color, size }) => <Ticket size={size} color={color} />,
         }}
       />
