@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 import { useEffect } from 'react';
 import { Redirect } from 'expo-router';
 import { useAuth } from '@/src/context/AuthContext';
-import { Chrome as Home, Search, ShoppingBag, Ticket, User } from 'lucide-react-native';
+import {  Home, Search, ShoppingBag, Ticket, User } from 'lucide-react-native';
 import { Theme } from '@/src/constants/theme';
 
 export default function ClientTabLayout() {
@@ -59,8 +59,8 @@ export default function ClientTabLayout() {
       <Tabs.Screen
         name="search"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color, size }) => <Search size={size} color={color} />,
+          title: 'Marketplace',
+          tabBarIcon: ({ color, size }) => <ShoppingBag size={size} color={color} />,
         }}
       />
       <Tabs.Screen

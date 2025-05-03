@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
-import { ArrowLeft, User, Mail, Lock } from 'lucide-react-native';
+import { ArrowLeft, User, Mail, Lock, Phone } from 'lucide-react-native';
 import { useAuth } from '@/src/context/AuthContext';
 import { Input } from '@/src/components/common/Input';
 import { Button } from '@/src/components/common/Button';
@@ -22,7 +22,8 @@ const RegisterSchema = Yup.object().shape({
   name: Yup.string().required('Name is required'),
   email: Yup.string().email('Invalid email').required('Email is required'),
   password: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
-  role: Yup.string().oneOf(['artist', 'client', 'admin'], 'Invalid role').required('Role is required'),
+  phone: Yup.string().required('Phone number is required'),
+  role: Yup.string().oneOf(['artist', 'client'], 'Invalid role').required('Role is required'),
 });
 
 export default function AuthScreen() {
@@ -30,24 +31,21 @@ export default function AuthScreen() {
   const { login, register } = useAuth();
   const router = useRouter();
 
-  const handleLogin = async (values: { email: string; password: string }, { setSubmitting, setErrors }: any) => {
+  const handleLogin = async (values, { setSubmitting, setErrors }) => {
     try {
       await login(values.email, values.password);
       // No need to navigate manually, the root layout handles redirect after auth
-    } catch (error: any) {
+    } catch (error) {
       setErrors({ email: error.message });
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleRegister = async (
-    values: { name: string; email: string; password: string; role: 'artist' | 'client' | 'admin' },
-    { setSubmitting, setErrors }: any
-  ) => {
+  const handleRegister = async (values, { setSubmitting, setErrors }) => {
     try {
-      await register(values.email, values.password, values.name, values.role);
-    } catch (error: any) {
+      await register(values.email, values.password, values.name, values.phone, values.role);
+    } catch (error) {
       setErrors({ email: error.message });
     } finally {
       setSubmitting(false);
@@ -120,7 +118,7 @@ export default function AuthScreen() {
               </Formik>
             ) : (
               <Formik
-                initialValues={{ name: '', email: '', password: '', role: 'client' }}
+                initialValues={{ name: '', email: '', password: '', phone: '', role: 'client' }}
                 validationSchema={RegisterSchema}
                 onSubmit={handleRegister}
               >
@@ -147,7 +145,18 @@ export default function AuthScreen() {
                       onBlur={handleBlur('email')}
                       error={touched.email && errors.email ? errors.email : undefined}
                     />
-
+                    
+                    <Input
+                      label="Phone Number"
+                      placeholder="Enter your phone number "
+                      keyboardType="phone-pad"
+                      leftIcon={<Phone size={20} color={Theme.colors.textLight} />}
+                      value={values.phone}
+                      onChangeText={handleChange('phone')}
+                      onBlur={handleBlur('phone')}
+                      error={touched.phone && errors.phone ? errors.phone : undefined}
+                    />
+                    
                     <Input
                       label="Password"
                       placeholder="Enter your password"
@@ -161,7 +170,7 @@ export default function AuthScreen() {
 
                     <Text style={styles.label}>I am a:</Text>
                     <View style={styles.roleContainer}>
-                      {['client', 'artist', 'admin'].map(role => (
+                      {['client', 'artist'].map(role => (
                         <TouchableOpacity
                           key={role}
                           style={[
@@ -213,8 +222,12 @@ export default function AuthScreen() {
 }
 
 const styles = StyleSheet.create({
-  keyboardAvoidingView: { flex: 1 },
-  scrollContent: { flexGrow: 1 },
+  keyboardAvoidingView: { 
+    flex: 1 
+  },
+  scrollContent: { 
+    flexGrow: 1 
+  },
   container: {
     flex: 1,
     padding: Theme.spacing.lg,
@@ -236,7 +249,9 @@ const styles = StyleSheet.create({
     color: Theme.colors.textLight,
     marginBottom: Theme.spacing.xl,
   },
-  card: { width: '100%' },
+  card: { 
+    width: '100%' 
+  },
   label: {
     fontFamily: Theme.typography.fontFamily.medium,
     fontSize: Theme.typography.fontSize.sm,
@@ -267,7 +282,9 @@ const styles = StyleSheet.create({
     fontSize: Theme.typography.fontSize.sm,
     color: Theme.colors.textDark,
   },
-  selectedRoleText: { color: Theme.colors.secondary },
+  selectedRoleText: { 
+    color: Theme.colors.secondary 
+  },
   errorText: {
     fontFamily: Theme.typography.fontFamily.regular,
     fontSize: Theme.typography.fontSize.xs,
@@ -275,7 +292,9 @@ const styles = StyleSheet.create({
     marginTop: -Theme.spacing.sm,
     marginBottom: Theme.spacing.sm,
   },
-  submitButton: { marginTop: Theme.spacing.md },
+  submitButton: { 
+    marginTop: Theme.spacing.md 
+  },
   toggleContainer: {
     flexDirection: 'row',
     justifyContent: 'center',

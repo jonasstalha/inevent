@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "bolt-expo-nativewind",
-    "slug": "bolt-expo-nativewind",
-    "version": "1.0.0",
+    "name": "Alphabet",
+    "slug": "Alphabet",
+    "version": "0.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",

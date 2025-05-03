@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/src/context/AuthContext';
 import { Button } from '@/src/components/common/Button';
 import { Theme } from '@/src/constants/theme';
-
+import img from '../assets/images/favicon.png'; 
 export default function LandingScreen() {
   const { user } = useAuth();
   const router = useRouter();
@@ -33,7 +33,7 @@ export default function LandingScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.logoContainer}>
-        <Text style={styles.logoText}>ArtistHub</Text>
+        <Text style={styles.logoText}>Alphabet</Text>
       </View>
       
       <View style={styles.heroContainer}>
@@ -44,7 +44,7 @@ export default function LandingScreen() {
         
         <View style={styles.imageContainer}>
           <Image
-            source={{ uri: 'https://images.pexels.com/photos/7149165/pexels-photo-7149165.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' }}
+            source={img}
             style={styles.heroImage}
             resizeMode="cover"
           />
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     color: Theme.colors.textLight,
   },
   footer: {
-    marginTop: 'auto',
+    marginTop: '-63',
     marginBottom: Theme.spacing.xl,
   },
 });

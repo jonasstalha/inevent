@@ -106,7 +106,7 @@ export default function SearchScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Explore</Text>
+        <Text style={styles.headerTitle}>Maketplace</Text>
       </View>
       
       <View style={styles.searchContainer}>
