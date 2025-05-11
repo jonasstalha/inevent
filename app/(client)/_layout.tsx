@@ -1,89 +1,168 @@
 import { Tabs } from 'expo-router';
-import { useEffect } from 'react';
-import { Redirect } from 'expo-router';
-import { useAuth } from '@/src/context/AuthContext';
-import {  Home, Search, ShoppingBag, Ticket, User } from 'lucide-react-native';
-import { Theme } from '@/src/constants/theme';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, TouchableOpacity, Animated, Easing, StyleSheet, Platform } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Home, Search, Ticket, User } from 'lucide-react-native';
 
-export default function ClientTabLayout() {
-  const { user, loading } = useAuth();
+const Theme = {
+  colors: {
+    primary: '#007bff',
+    background: '#fff',
+    card: '#fff',
+    border: '#ddd',
+    text: '#333',
+    textLight: '#999',
+  },
+  typography: {
+    fontFamily: {
+      medium: 'System',
+    },
+  },
+};
 
-  // Check if the user is logged in and has the correct role
+function TabBarButton({ onPress, children, isFocused }: any) {
+  const scale = useState(new Animated.Value(1))[0];
+
   useEffect(() => {
-    if (!loading && (!user || user.role !== 'client')) {
-      // Redirect if not a client user
-      return;
+    if (isFocused) {
+      Animated.sequence([
+        Animated.timing(scale, {
+          toValue: 1.15,
+          duration: 200,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(scale, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
-  }, [user, loading]);
-
-  // Show loading or redirect if no user or wrong role
-  if (loading) {
-    return null;
-  }
-
-  if (!user) {
-    return <Redirect href="/auth" />;
-  }
-
-  if (user.role !== 'client') {
-    // Redirect to the appropriate role's layout
-    return <Redirect href={`/(${user.role})`} />;
-  }
+  }, [isFocused]);
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Theme.colors.primary,
-        tabBarInactiveTintColor: Theme.colors.textLight,
-        tabBarStyle: {
-          backgroundColor: Theme.colors.card,
-          borderTopColor: Theme.colors.border,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
-        },
-        tabBarLabelStyle: {
-          fontFamily: Theme.typography.fontFamily.medium,
-          fontSize: 12,
-        },
-        headerShown: false,
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="search"
-        options={{
-          title: 'Marketplace',
-          tabBarIcon: ({ color, size }) => <ShoppingBag size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="orders"
-        options={{
-          title: 'Orders',
-          tabBarIcon: ({ color, size }) => <ShoppingBag size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="tickets"
-        options={{
-          title: 'tickets',
-          tabBarIcon: ({ color, size }) => <Ticket size={size} color={color} />,
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ color, size }) => <User size={size} color={color} />,
-        }}
-      />
-    </Tabs>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.tabButton}>
+      <Animated.View style={{ transform: [{ scale }] }}>{children}</Animated.View>
+    </TouchableOpacity>
   );
 }
+
+function CustomTabBar({ state, descriptors, navigation }: any) {
+  return (
+    <SafeAreaView edges={['bottom']} style={styles.tabBarContainer}>
+      <View style={styles.tabBar}>
+        {state.routes
+          .filter((route: any) => !route.name.startsWith('(hidden)')) // Exclude hidden folder routes
+          .map((route: any, index: number) => {
+            const { options } = descriptors[route.key];
+            const label = options.title || route.name;
+            const isFocused = state.index === index;
+
+            const onPress = () => {
+              const event = navigation.emit({
+                type: 'tabPress',
+                target: route.key,
+                canPreventDefault: true,
+              });
+              if (!isFocused && !event.defaultPrevented) {
+                navigation.navigate(route.name);
+              }
+            };
+
+            const iconProps = {
+              color: isFocused ? Theme.colors.primary : Theme.colors.textLight,
+              size: 24,
+            };
+
+            const Icon = options.tabBarIcon ? options.tabBarIcon(iconProps) : null;
+
+            return (
+              <TabBarButton key={route.key} onPress={onPress} isFocused={isFocused}>
+                {Icon}
+                <Text style={[styles.tabLabel, { color: iconProps.color }]}>{label}</Text>
+              </TabBarButton>
+            );
+          })}
+      </View>
+    </SafeAreaView>
+  );
+}
+
+export default function Layout() {
+  return (
+    <SafeAreaProvider>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarStyle: { display: 'none' },
+        }}
+        tabBar={(props) => <CustomTabBar {...props} />}
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Home',
+            tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
+          }}
+        />
+        <Tabs.Screen
+          name="search"
+          options={{
+            title: 'Search',
+            tabBarIcon: ({ color, size }) => <Search color={color} size={size} />,
+          }}
+        />
+        <Tabs.Screen
+          name="tickets"
+          options={{
+            title: 'Tickets',
+            tabBarIcon: ({ color, size }) => <Ticket color={color} size={size} />,
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: 'Profile',
+            tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
+          }}
+        />
+      </Tabs>
+    </SafeAreaProvider>
+  );
+}
+
+const styles = StyleSheet.create({
+  tabBarContainer: {
+    backgroundColor: Theme.colors.card,
+    borderTopWidth: 1,
+    borderTopColor: Theme.colors.border,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -3 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  tabBar: {
+    flexDirection: 'row',
+    height: 60,
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabLabel: {
+    fontSize: 11,
+    fontFamily: Theme.typography.fontFamily.medium,
+    marginTop: 4,
+  },
+});

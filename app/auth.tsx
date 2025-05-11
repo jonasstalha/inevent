@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Formik } from 'formik';
@@ -11,6 +11,22 @@ import { Input } from '@/src/components/common/Input';
 import { Button } from '@/src/components/common/Button';
 import { Card } from '@/src/components/common/Card';
 import { Theme } from '@/src/constants/theme';
+import * as Google from 'expo-auth-session/providers/google';
+import { AuthSessionResult } from 'expo-auth-session';
+
+// Fixing TypeScript errors
+interface LoginValues {
+  email: string;
+  password: string;
+}
+
+interface RegisterValues {
+  name: string;
+  email: string;
+  password: string;
+  phone: string;
+  role: string;
+}
 
 // Validation schemas
 const LoginSchema = Yup.object().shape({
@@ -31,22 +47,50 @@ export default function AuthScreen() {
   const { login, register } = useAuth();
   const router = useRouter();
 
-  const handleLogin = async (values, { setSubmitting, setErrors }) => {
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: 'YOUR_EXPO_CLIENT_ID', // Corrected property name
+    iosClientId: 'YOUR_IOS_CLIENT_ID',
+    androidClientId: 'YOUR_ANDROID_CLIENT_ID',
+    webClientId: 'YOUR_WEB_CLIENT_ID',
+  });
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { authentication } = response;
+      // Handle authentication and fetch user info
+    }
+  }, [response]);
+
+  const handleGoogleSignIn = async () => {
+    await promptAsync();
+  };
+
+  const handleLogin = async (
+    values: LoginValues,
+    { setSubmitting, setErrors }: { setSubmitting: (isSubmitting: boolean) => void; setErrors: (errors: Partial<LoginValues>) => void }
+  ) => {
     try {
       await login(values.email, values.password);
-      // No need to navigate manually, the root layout handles redirect after auth
-    } catch (error) {
-      setErrors({ email: error.message });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setErrors({ email: error.message });
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleRegister = async (values, { setSubmitting, setErrors }) => {
+  const handleRegister = async (
+    values: RegisterValues,
+    { setSubmitting, setErrors }: { setSubmitting: (isSubmitting: boolean) => void; setErrors: (errors: Partial<RegisterValues>) => void }
+  ) => {
     try {
-      await register(values.email, values.password, values.name, values.phone, values.role);
-    } catch (error) {
-      setErrors({ email: error.message });
+      const role = values.role as 'artist' | 'client' | 'admin'; // Explicitly cast role to the expected type
+      await register(values.email, values.password, values.name, values.phone, role);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setErrors({ email: error.message });
+      }
     } finally {
       setSubmitting(false);
     }
@@ -205,6 +249,13 @@ export default function AuthScreen() {
                 )}
               </Formik>
             )}
+
+            <Button
+              title="Sign in with Google"
+              onPress={handleGoogleSignIn}
+              fullWidth
+              style={styles.googleButton}
+            />
           </Card>
 
           <View style={styles.toggleContainer}>
@@ -294,6 +345,9 @@ const styles = StyleSheet.create({
   },
   submitButton: { 
     marginTop: Theme.spacing.md 
+  },
+  googleButton: {
+    marginTop: Theme.spacing.md,
   },
   toggleContainer: {
     flexDirection: 'row',

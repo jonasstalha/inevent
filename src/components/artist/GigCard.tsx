@@ -1,33 +1,30 @@
 import React from 'react';
-import { StyleSheet, View, Text, Image, TouchableOpacity } from 'react-native';
-import { Star } from 'lucide-react-native';
-import { Card } from '../common/Card';
+import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { Theme } from '../../constants/theme';
-import { Gig } from '../../models/types';
 
 interface GigCardProps {
-  gig: Gig;
+  gig: {
+    id: string;
+    title: string;
+    description: string;
+    price: string;
+    image: string;
+  };
   onPress: (gigId: string) => void;
+  onBuy: (gigId: string) => void;
 }
 
-export const GigCard: React.FC<GigCardProps> = ({ gig, onPress }) => {
+export const GigCard: React.FC<GigCardProps> = ({ gig, onPress, onBuy }) => {
   return (
-    <TouchableOpacity onPress={() => onPress(gig.id)} activeOpacity={0.9}>
-      <Card variant="elevated" style={styles.container} padding="none">
-        <Image source={{ uri: gig.images[0] }} style={styles.image} />
-        <View style={styles.content}>
-          <Text style={styles.title} numberOfLines={1}>
-            {gig.title}
-          </Text>
-          <Text style={styles.price}>${gig.basePrice} base price</Text>
-          <View style={styles.ratingContainer}>
-            <Star size={16} color={Theme.colors.warning} fill={Theme.colors.warning} />
-            <Text style={styles.rating}>
-              {gig.rating.toFixed(1)} ({gig.reviewCount})
-            </Text>
-          </View>
-        </View>
-      </Card>
+    <TouchableOpacity onPress={() => onPress(gig.id)} style={styles.container}>
+      <Image source={{ uri: gig.image }} style={styles.image} />
+      <View style={styles.content}>
+        <Text style={styles.title}>{gig.title}</Text>
+        <Text style={styles.price}>{gig.price}</Text>
+        <TouchableOpacity onPress={() => onBuy(gig.id)}>
+          <Text style={styles.buyButton}>Buy Now</Text>
+        </TouchableOpacity>
+      </View>
     </TouchableOpacity>
   );
 };
@@ -58,14 +55,9 @@ const styles = StyleSheet.create({
     color: Theme.colors.primary,
     marginBottom: Theme.spacing.xs,
   },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rating: {
-    fontFamily: Theme.typography.fontFamily.regular,
+  buyButton: {
+    fontFamily: Theme.typography.fontFamily.medium,
     fontSize: Theme.typography.fontSize.sm,
-    color: Theme.colors.textLight,
-    marginLeft: Theme.spacing.xs,
+    color: Theme.colors.primary,
   },
 });

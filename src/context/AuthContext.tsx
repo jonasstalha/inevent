@@ -16,6 +16,7 @@ const MOCK_USERS: User[] = [
   {
     id: '1',
     email: 'artist@example.com',
+    password: 'artist123',
     name: 'Artist Demo',
     role: 'artist',
     createdAt: new Date(),
@@ -23,6 +24,7 @@ const MOCK_USERS: User[] = [
   {
     id: '2',
     email: 'client@example.com',
+    password: 'client123',
     name: 'Client Demo',
     role: 'client',
     createdAt: new Date(),
@@ -30,6 +32,7 @@ const MOCK_USERS: User[] = [
   {
     id: '3',
     email: 'admin@example.com',
+    password: 'admin123',
     name: 'Admin Demo',
     role: 'admin',
     createdAt: new Date(),

@@ -3,6 +3,7 @@ export interface User {
   email: string;
   role: 'artist' | 'client' | 'admin';
   name: string;
+  password?: string; // Added password field
   profileImage?: string;
   createdAt: Date;
 }

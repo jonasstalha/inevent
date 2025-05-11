@@ -1,5 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, ScrollView, FlatList, TextInput, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { StyleSheet, View, Text, ScrollView, FlatList, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
+import * as Animatable from 'react-native-animatable';
+import { debounce } from 'lodash';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Search as SearchIcon, Filter, X } from 'lucide-react-native';
 
@@ -20,6 +22,12 @@ export default function SearchScreen() {
   const [activeTab, setActiveTab] = useState('gigs'); // 'gigs' or 'artists'
   const [filteredGigs, setFilteredGigs] = useState<Gig[]>([]);
   const [filteredArtists, setFilteredArtists] = useState<Artist[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const debouncedSetSearchQuery = useCallback(
+    debounce((query: string) => setSearchQuery(query), 300),
+    []
+  );
 
   useEffect(() => {
     // Initialize from URL params
@@ -33,43 +41,49 @@ export default function SearchScreen() {
   }, [params]);
 
   useEffect(() => {
-    // Filter artists
-    let artistResults = [...artists];
-    
-    if (searchQuery) {
-      artistResults = artistResults.filter(artist => 
-        artist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        artist.bio.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-    
-    if (selectedCategory !== 'All') {
-      artistResults = artistResults.filter(artist => 
-        artist.categories.some(category => 
-          category.toLowerCase() === selectedCategory.toLowerCase()
-        )
-      );
-    }
-    
-    setFilteredArtists(artistResults);
-    
-    // Filter gigs
-    let gigResults = [...gigs];
-    
-    if (searchQuery) {
-      gigResults = gigResults.filter(gig => 
-        gig.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        gig.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-    
-    if (selectedCategory !== 'All') {
-      gigResults = gigResults.filter(gig => 
-        gig.category.toLowerCase() === selectedCategory.toLowerCase()
-      );
-    }
-    
-    setFilteredGigs(gigResults);
+    setIsLoading(true); // Start loading
+    const timeout = setTimeout(() => {
+      // Filter artists
+      let artistResults = [...artists];
+      
+      if (searchQuery) {
+        artistResults = artistResults.filter(artist => 
+          artist.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          artist.bio.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
+      
+      if (selectedCategory !== 'All') {
+        artistResults = artistResults.filter(artist => 
+          artist.categories.some(category => 
+            category.toLowerCase() === selectedCategory.toLowerCase()
+          )
+        );
+      }
+      
+      setFilteredArtists(artistResults);
+      
+      // Filter gigs
+      let gigResults = [...gigs];
+      
+      if (searchQuery) {
+        gigResults = gigResults.filter(gig => 
+          gig.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          gig.description.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
+      
+      if (selectedCategory !== 'All') {
+        gigResults = gigResults.filter(gig => 
+          gig.category.toLowerCase() === selectedCategory.toLowerCase()
+        );
+      }
+      
+      setFilteredGigs(gigResults);
+      setIsLoading(false); // End loading
+    }, 500); // Simulate delay
+
+    return () => clearTimeout(timeout);
   }, [searchQuery, selectedCategory, artists, gigs]);
 
   const handleCategorySelect = (category: string) => {
@@ -96,11 +110,13 @@ export default function SearchScreen() {
   };
 
   const handleArtistPress = (artistId: string) => {
-    router.push(`/(client)/artist/${artistId}`);
+    const router = useRouter();
+    router.push(`/(client)/(hidden)/artist/${artistId}`);
   };
 
   const handleGigPress = (gigId: string) => {
-    router.push(`/(client)/gig/${gigId}`);
+    const router = useRouter();
+    router.push(`/(client)/(hidden)/gig/${gigId}`);
   };
 
   return (
@@ -116,7 +132,9 @@ export default function SearchScreen() {
             style={styles.searchInput}
             placeholder="Search for artists, services..."
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={(text) => {
+              debouncedSetSearchQuery(text);
+            }}
             onSubmitEditing={handleSearch}
             returnKeyType="search"
           />
@@ -164,42 +182,50 @@ export default function SearchScreen() {
         </TouchableOpacity>
       </View>
       
-      {activeTab === 'gigs' ? (
-        filteredGigs.length > 0 ? (
-          <FlatList
-            data={filteredGigs}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View style={styles.gigCardContainer}>
-                <GigCard gig={item} onPress={handleGigPress} />
-              </View>
-            )}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-          />
-        ) : (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No services found matching your criteria</Text>
-          </View>
-        )
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Theme.colors.primary} />
+        </View>
+      ) : activeTab === 'gigs' ? (
+        <Animatable.View animation="fadeIn" duration={300}>
+          {filteredGigs.length > 0 ? (
+            <FlatList
+              data={filteredGigs}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <View style={styles.gigCardContainer}>
+                  <GigCard gig={item} onPress={handleGigPress} onBuy={() => {}} />
+                </View>
+              )}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+            />
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No services found matching your criteria</Text>
+            </View>
+          )}
+        </Animatable.View>
       ) : (
-        filteredArtists.length > 0 ? (
-          <FlatList
-            data={filteredArtists}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View style={styles.artistCardContainer}>
-                <ArtistCard artist={item} onPress={handleArtistPress} />
-              </View>
-            )}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-          />
-        ) : (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No artists found matching your criteria</Text>
-          </View>
-        )
+        <Animatable.View animation="fadeIn" duration={300}>
+          {filteredArtists.length > 0 ? (
+            <FlatList
+              data={filteredArtists}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <View style={styles.artistCardContainer}>
+                  <ArtistCard artist={item} onPress={handleArtistPress} onHire={() => {}} />
+                </View>
+              )}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+            />
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No artists found matching your criteria</Text>
+            </View>
+          )}
+        </Animatable.View>
       )}
     </View>
   );
@@ -305,5 +331,10 @@ const styles = StyleSheet.create({
     fontSize: Theme.typography.fontSize.md,
     color: Theme.colors.textLight,
     textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

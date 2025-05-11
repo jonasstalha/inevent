@@ -38,7 +38,7 @@ export default function RootLayout() {
       <AppProvider>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="index" />
-          <Stack.Screen name="auth" />
+           <Stack.Screen name="auth" /> 
           <Stack.Screen name="(client)" />
           <Stack.Screen name="(artist)" />
           <Stack.Screen name="(admin)" />
