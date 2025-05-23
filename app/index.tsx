@@ -1,33 +1,25 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, View, Text, Image, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { StyleSheet, View, Text, Image } from 'react-native';
 import { useAuth } from '@/src/context/AuthContext';
 import { Button } from '@/src/components/common/Button';
 import { Theme } from '@/src/constants/theme';
 import img from '../assets/images/favicon.png'; 
+
 export default function LandingScreen() {
   const { user } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
+    // Automatically redirect to the client home if the user is authenticated
     if (user) {
-      // Redirect based on user role
-      switch (user.role) {
-        case 'client':
-          router.replace('/(client)');
-          break;
-        case 'artist':
-          router.replace('/(artist)');
-          break;
-        case 'admin':
-          router.replace('/(admin)');
-          break;
-      }
+      router.replace('/(client)');
     }
   }, [user, router]);
 
   const handleGetStarted = () => {
-    router.push('/auth');
+    // In case the user is not authenticated, you can navigate to the authentication flow
+    router.push('/(client)'); // You can modify this based on your authentication flow
   };
 
   return (
@@ -35,13 +27,13 @@ export default function LandingScreen() {
       <View style={styles.logoContainer}>
         <Text style={styles.logoText}>Alphabet</Text>
       </View>
-      
+
       <View style={styles.heroContainer}>
         <Text style={styles.heading}>Connect with Amazing Artists</Text>
         <Text style={styles.subheading}>
           Book performers, photographers, chefs, and more for your next event
         </Text>
-        
+
         <View style={styles.imageContainer}>
           <Image
             source={img}
@@ -51,7 +43,7 @@ export default function LandingScreen() {
           <View style={styles.overlay} />
         </View>
       </View>
-      
+
       <View style={styles.features}>
         <View style={styles.featureItem}>
           <Text style={styles.featureTitle}>Discover Talent</Text>
@@ -61,12 +53,8 @@ export default function LandingScreen() {
           <Text style={styles.featureTitle}>Book Easily</Text>
           <Text style={styles.featureDescription}>Simple booking process with secure payments</Text>
         </View>
-        <View style={styles.featureItem}>
-          <Text style={styles.featureTitle}>Sell Your Skills</Text>
-          <Text style={styles.featureDescription}>Artists can create listings and connect with clients</Text>
-        </View>
       </View>
-      
+
       <View style={styles.footer}>
         <Button
           title="Get Started"
@@ -147,7 +135,7 @@ const styles = StyleSheet.create({
     color: Theme.colors.textLight,
   },
   footer: {
-    marginTop: '-63',
+    marginTop: '-10',
     marginBottom: Theme.spacing.xl,
   },
 });

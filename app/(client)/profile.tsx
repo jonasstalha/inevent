@@ -75,8 +75,8 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={styles.header}>
-        <Text style={styles.title}>Profile</Text>
-      </View>
+
+      </View>   
 
       <View style={styles.profileSection}>
         <Image

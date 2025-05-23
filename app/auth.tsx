@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
@@ -12,9 +12,14 @@ import { Button } from '@/src/components/common/Button';
 import { Card } from '@/src/components/common/Card';
 import { Theme } from '@/src/constants/theme';
 import * as Google from 'expo-auth-session/providers/google';
-import { AuthSessionResult } from 'expo-auth-session';
 
-// Fixing TypeScript errors
+const mockUsers = [
+  { email: 'admin@example.com', password: 'admin123', role: 'admin', name: 'Admin User' },
+  { email: 'artist@example.com', password: 'artist123', role: 'artist', name: 'Artist User' },
+  { email: 'client@example.com', password: 'client123', role: 'client', name: 'Client User' }
+];
+
+// TypeScript interfaces
 interface LoginValues {
   email: string;
   password: string;
@@ -48,7 +53,7 @@ export default function AuthScreen() {
   const router = useRouter();
 
   const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: 'YOUR_EXPO_CLIENT_ID', // Corrected property name
+    clientId: 'YOUR_EXPO_CLIENT_ID',
     iosClientId: 'YOUR_IOS_CLIENT_ID',
     androidClientId: 'YOUR_ANDROID_CLIENT_ID',
     webClientId: 'YOUR_WEB_CLIENT_ID',
@@ -58,22 +63,70 @@ export default function AuthScreen() {
     if (response?.type === 'success') {
       const { authentication } = response;
       // Handle authentication and fetch user info
+      console.log('Google auth success:', authentication);
     }
   }, [response]);
 
   const handleGoogleSignIn = async () => {
-    await promptAsync();
+    try {
+      await promptAsync();
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      Alert.alert('Error', 'Failed to sign in with Google');
+    }
   };
 
   const handleLogin = async (
     values: LoginValues,
-    { setSubmitting, setErrors }: { setSubmitting: (isSubmitting: boolean) => void; setErrors: (errors: Partial<LoginValues>) => void }
+    { setSubmitting, setErrors }: { 
+      setSubmitting: (isSubmitting: boolean) => void; 
+      setErrors: (errors: Partial<LoginValues>) => void;
+    }
   ) => {
     try {
-      await login(values.email, values.password);
+      setSubmitting(true);
+      
+      // Check mock users first (for development/testing)
+      const foundUser = mockUsers.find(
+        (user) => user.email === values.email && user.password === values.password
+      );
+
+      if (foundUser) {
+        // Use the login function from AuthContext
+        await login(values.email, values.password);
+        
+        // Navigate based on role
+        switch (foundUser.role) {
+          case 'client':
+            router.push('/(client)'); // or '/ClientDashboard' if that's the file name
+            break;
+          case 'artist':
+            router.push('/(artist)');
+            break;
+          case 'admin':
+            router.push('/(admin)'); // or '/AdminDashboard' if that's the file name
+            break;
+          default:
+            Alert.alert('Error', 'Unknown user role');
+        }
+      } else {
+        // Try actual login through AuthContext
+        try {
+          await login(values.email, values.password);
+          // Navigation will be handled by AuthContext or you can add it here
+        } catch (authError) {
+          setErrors({ 
+            email: 'Invalid email or password',
+            password: 'Invalid email or password'
+          });
+        }
+      }
     } catch (error: unknown) {
+      console.error('Login error:', error);
       if (error instanceof Error) {
         setErrors({ email: error.message });
+      } else {
+        setErrors({ email: 'An unexpected error occurred' });
       }
     } finally {
       setSubmitting(false);
@@ -82,14 +135,33 @@ export default function AuthScreen() {
 
   const handleRegister = async (
     values: RegisterValues,
-    { setSubmitting, setErrors }: { setSubmitting: (isSubmitting: boolean) => void; setErrors: (errors: Partial<RegisterValues>) => void }
+    { setSubmitting, setErrors }: { 
+      setSubmitting: (isSubmitting: boolean) => void; 
+      setErrors: (errors: Partial<RegisterValues>) => void;
+    }
   ) => {
     try {
-      const role = values.role as 'artist' | 'client' | 'admin'; // Explicitly cast role to the expected type
+      setSubmitting(true);
+      const role = values.role as 'artist' | 'client' | 'admin';
       await register(values.email, values.password, values.name, values.phone, role);
+      
+      // Navigate based on role after successful registration
+      switch (role) {
+        case 'client':
+          router.push('/(client)');
+          break;
+        case 'artist':
+          router.push('/ArtistPlatform');
+          break;
+        default:
+          router.push('/dashboard');
+      }
     } catch (error: unknown) {
+      console.error('Registration error:', error);
       if (error instanceof Error) {
         setErrors({ email: error.message });
+      } else {
+        setErrors({ email: 'Registration failed. Please try again.' });
       }
     } finally {
       setSubmitting(false);
@@ -192,7 +264,7 @@ export default function AuthScreen() {
                     
                     <Input
                       label="Phone Number"
-                      placeholder="Enter your phone number "
+                      placeholder="Enter your phone number"
                       keyboardType="phone-pad"
                       leftIcon={<Phone size={20} color={Theme.colors.textLight} />}
                       value={values.phone}
@@ -255,6 +327,7 @@ export default function AuthScreen() {
               onPress={handleGoogleSignIn}
               fullWidth
               style={styles.googleButton}
+              variant="outline"
             />
           </Card>
 

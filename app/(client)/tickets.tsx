@@ -288,7 +288,6 @@ const TicketsScreen = () => {
         <View style={styles.header}>
           <View>
 
-            <Text style={styles.heading}>Discover Events</Text>
           </View>
         </View>
 

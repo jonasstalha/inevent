@@ -15,16 +15,13 @@ const CATEGORIES = [
 
 interface CategorySelectorProps {
   onSelectCategory: (category: string) => void;
+  selectedCategory: string;
 }
 
-export const CategorySelector: React.FC<CategorySelectorProps> = ({ onSelectCategory }) => {
-  const [selectedCategory, setSelectedCategory] = useState('All');
-
-  const handleSelect = (category: string) => {
-    setSelectedCategory(category);
-    onSelectCategory(category);
-  };
-
+export const CategorySelector: React.FC<CategorySelectorProps> = ({
+  onSelectCategory,
+  selectedCategory
+}) => {
   return (
     <View style={styles.container}>
       <ScrollView
@@ -39,7 +36,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({ onSelectCate
               styles.categoryButton,
               selectedCategory === category && styles.selectedCategory,
             ]}
-            onPress={() => handleSelect(category)}
+            onPress={() => onSelectCategory(category)}
             activeOpacity={0.7}
           >
             <Text
