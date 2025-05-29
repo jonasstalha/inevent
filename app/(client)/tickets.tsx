@@ -13,7 +13,7 @@ import {
   RefreshControl,
   StatusBar
 } from 'react-native';
-import { useNavigation } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { Ionicons, MaterialCommunityIcons, Feather } from '@expo/vector-icons';
 import Animated, { 
@@ -32,8 +32,23 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
+// Define the Ticket type for strong typing
+interface Ticket {
+  id: number;
+  title: string;
+  city: string;
+  venue: string;
+  price: number;
+  date: string;
+  time: string;
+  image: any;
+  popular: boolean;
+  availableTickets: number;
+  rating: number;
+}
+
 // Enhanced dummy data with more details
-const dummyTickets = [
+const dummyTickets: Ticket[] = [
   {
     id: 1,
     title: 'DJ Party Casablanca',
@@ -61,30 +76,30 @@ const dummyTickets = [
     rating: 4.2,
   },
   {
-    id: 1,
-    title: 'DJ Party Casablanca',
-    city: 'Casablanca',
-    venue: 'Ocean Club',
-    price: 150,
-    date: '2025-06-01',
-    time: '22:00',
+    id: 3,
+    title: 'Jazz Night Rabat',
+    city: 'Rabat',
+    venue: 'Jazz Club',
+    price: 100,
+    date: '2025-07-05',
+    time: '20:00',
     image: ticket3, // Correctly referenced static asset
     popular: true,
-    availableTickets: 45,
-    rating: 4.7,
+    availableTickets: 30,
+    rating: 4.8,
   },
   {
-    id: 2,
-    title: 'Art Expo Marrakech',
-    city: 'Marrakech',
-    venue: 'Bahia Palace',
-    price: 80,
-    date: '2025-06-15',
-    time: '10:00',
+    id: 4,
+    title: 'Food & Wine Festival',
+    city: 'Agadir',
+    venue: 'Beach Resort',
+    price: 200,
+    date: '2025-08-12',
+    time: '12:00',
     image: ticket4, // Correctly referenced static asset
     popular: false,
-    availableTickets: 120,
-    rating: 4.2,
+    availableTickets: 80,
+    rating: 4.5,
   },
 ];
 
@@ -97,14 +112,15 @@ const categories = [
   { id: 'food', name: 'Food', icon: 'restaurant' },
 ];
 
-const formatDate = (dateString) => {
-  const options = { day: 'numeric', month: 'short', year: 'numeric' };
+const formatDate = (dateString: string) => {
+  const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' };
   return new Date(dateString).toLocaleDateString('en-GB', options);
 };
 
 const TicketsScreen = () => {
+  const router = useRouter();
   const navigation = useNavigation();
-  const [tickets, setTickets] = useState([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -140,7 +156,7 @@ const TicketsScreen = () => {
     if (selectedCategory === 'all') return filteredTickets;
     // In a real app, you would filter by actual categories
     // This is just a simulation
-    const categoryMap = {
+    const categoryMap: Record<string, string[]> = {
       music: ['DJ Party', 'Jazz'],
       art: ['Art Expo'],
       theatre: ['Theatre'],
@@ -155,7 +171,7 @@ const TicketsScreen = () => {
   };
 
   // Popular ticket card for horizontal scrolling
-  const renderPopularTicketCard = ({ item, index }) => (
+  const renderPopularTicketCard: import('react-native').ListRenderItem<Ticket> = ({ item, index }) => (
     <Animated.View 
       entering={FadeInRight.delay(index * 100).springify()}
       style={styles.popularTicketCard}
@@ -179,7 +195,7 @@ const TicketsScreen = () => {
               <Text style={styles.popularTicketPrice}>{item.price} MAD</Text>
               <TouchableOpacity 
                 style={styles.viewDetailsButton}
-                onPress={() => navigation.navigate('TicketDetail', { id: item.id })}
+                onPress={() => router.push({ pathname: '/(client)/(hidden)/ticket/[ticket]', params: { ticket: item.id.toString() } })}
               >
                 <Text style={styles.viewDetailsText}>View</Text>
                 <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
@@ -192,7 +208,7 @@ const TicketsScreen = () => {
   );
 
   // Regular ticket card for vertical list
-  const renderTicketCard = ({ item, index }) => (
+  const renderTicketCard: import('react-native').ListRenderItem<Ticket> = ({ item, index }) => (
     <Animated.View 
       entering={FadeInDown.delay(index * 100).springify()}
       style={styles.ticketCard}
@@ -228,7 +244,7 @@ const TicketsScreen = () => {
               </Text>
               <TouchableOpacity
                 style={styles.buyButton}
-                onPress={() => navigation.navigate('TicketDetail', { id: item.id })}
+                onPress={() => router.push({ pathname: '/(client)/(hidden)/ticket/[ticket]', params: { ticket: item.id.toString() } })}
               >
                 <Text style={styles.buyButtonText}>Buy</Text>
               </TouchableOpacity>
@@ -239,7 +255,7 @@ const TicketsScreen = () => {
     </Animated.View>
   );
 
-  const renderCategoryItem = ({ item }) => (
+  const renderCategoryItem = ({ item }: { item: { id: string; name: string; icon: string } }) => (
     <TouchableOpacity
       style={[
         styles.categoryItem,
@@ -248,7 +264,7 @@ const TicketsScreen = () => {
       onPress={() => setSelectedCategory(item.id)}
     >
       <Ionicons
-        name={item.icon}
+        name={item.icon as any}
         size={18}
         color={selectedCategory === item.id ? '#FFFFFF' : '#6C63FF'}
       />
