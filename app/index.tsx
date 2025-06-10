@@ -20,6 +20,10 @@ export default function WelcomeScreen() {
     router.replace({ pathname: '/(client)' }); // Go to main client app index
   };
 
+  const handleArtistPress = () => {
+    router.replace({ pathname: '/artist' }); // Go to artist side
+  };
+
   return (
     <View style={styles.container}>
       <Image source={img} style={styles.heroImage} resizeMode="cover" />
@@ -27,6 +31,12 @@ export default function WelcomeScreen() {
       <View style={styles.content}>
         <TouchableOpacity style={styles.button} onPress={handlePress}>
           <Text style={styles.buttonText}>Enter App</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, { marginTop: 16, backgroundColor: '#2a2a72' }]}
+          onPress={handleArtistPress}
+        >
+          <Text style={styles.buttonText}>Enter as Artist</Text>
         </TouchableOpacity>
       </View>
     </View>
