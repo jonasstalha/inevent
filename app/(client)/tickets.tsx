@@ -104,12 +104,14 @@ const dummyTickets: Ticket[] = [
 ];
 
 const categories = [
-  { id: 'all', name: 'All', icon: 'apps' },
-  { id: 'music', name: 'Music', icon: 'musical-notes' },
-  { id: 'art', name: 'Art', icon: 'color-palette' },
+  { id: 'musique', name: 'Musique', icon: 'musical-notes' },
   { id: 'theatre', name: 'Theatre', icon: 'film' },
-  { id: 'sports', name: 'Sports', icon: 'basketball' },
-  { id: 'food', name: 'Food', icon: 'restaurant' },
+  { id: 'comedie', name: 'Comedie', icon: 'happy' },
+  { id: 'sport', name: 'Sport', icon: 'basketball' },
+  { id: 'concert', name: 'Concert', icon: 'mic' },
+  { id: 'festival', name: 'Festival', icon: 'star' },
+  { id: 'formation', name: 'Formation', icon: 'school' },
+  { id: 'famille', name: 'Famille & Loisirs', icon: 'people' },
 ];
 
 const formatDate = (dateString: string) => {
@@ -157,11 +159,14 @@ const TicketsScreen = () => {
     // In a real app, you would filter by actual categories
     // This is just a simulation
     const categoryMap: Record<string, string[]> = {
-      music: ['DJ Party', 'Jazz'],
-      art: ['Art Expo'],
+      musique: ['Musique', 'DJ', 'Concert'],
       theatre: ['Theatre'],
-      sports: [],
-      food: ['Food & Wine'],
+      comedie: ['Comedie'],
+      sport: ['Sport'],
+      concert: ['Concert'],
+      festival: ['Festival'],
+      formation: ['Formation'],
+      famille: ['Famille', 'Loisirs'],
     };
     
     return filteredTickets.filter(ticket => {
@@ -708,4 +713,5 @@ const styles = StyleSheet.create({
   },
 });
 
+export { dummyTickets };
 export default TicketsScreen;

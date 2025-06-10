@@ -1,6 +1,7 @@
-// mockUsers.js
-export const mockUsers = [
-  { username: 'admin@gmail.com', password: 'admin123', role: 'admin' },
-  { username: 'vendor', password: 'vendor123', role: 'vendor' },
-  { username: 'client', password: 'client123', role: 'client' },
-];
+// This file is no longer needed. Real authentication is now used.
+export {};
+
+// Prevent Expo Router warning by exporting a dummy React component as default
+import React from 'react';
+const MockUsers = () => null;
+export default MockUsers;

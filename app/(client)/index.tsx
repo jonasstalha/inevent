@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { useAuth } from '@/src/context/AuthContext';
+import { useRouter } from 'expo-router';
+import { dummyTickets } from './tickets';
 
 const { width, height } = Dimensions.get('window');
 
@@ -123,12 +125,72 @@ const dummyEvents = [
 export default function EventApp() {
   const scrollViewRef = useRef<ScrollView>(null);
   const { user } = useAuth();
+  const router = useRouter();
   const [activeCategory, setActiveCategory] = useState('All');
   const [activeSection, setActiveSection] = useState('events');
   const [isPopupVisible, setPopupVisible] = useState(false);
   const [popupContent, setPopupContent] = useState<'features' | 'services' | 'events' | 'artists' | 'tickets'>('features');
   const [searchQuery, setSearchQuery] = useState('');
   const [events] = useState(dummyEvents);
+  const [services] = useState([
+    {
+      id: 1,
+      title: 'Premium Catering',
+      available: 'Available',
+      location: 'City Center',
+      reviews: '4.9 (120 reviews)',
+      orders: '240 orders',
+      price: '$1,200',
+      image: 'https://via.placeholder.com/300'
+    },
+    {
+      id: 2,
+      title: 'Luxury Venue',
+      available: 'Limited',
+      location: 'Riverside',
+      reviews: '4.8 (95 reviews)',
+      orders: '180 orders',
+      price: '$3,500',
+      image: 'https://via.placeholder.com/300'
+    },
+    {
+      id: 3,
+      title: 'Event Planning',
+      available: 'Available',
+      location: 'Downtown',
+      reviews: '4.7 (85 reviews)',
+      orders: '120 orders',
+      price: '$900',
+      image: 'https://via.placeholder.com/300'
+    }
+  ]);
+
+  const artists = [
+    {
+      id: 1,
+      name: 'Alex Morgan',
+      description: 'Professional wedding & event photographer with 8+ years experience',
+      specialty: 'Photography',
+      rating: 4.8,
+      image: 'https://via.placeholder.com/300'
+    },
+    {
+      id: 2,
+      name: 'DJ Maximus',
+      description: 'Top-rated DJ specializing in weddings and corporate events',
+      specialty: 'Music',
+      rating: 4.9,
+      image: 'https://via.placeholder.com/300'
+    },
+    {
+      id: 3,
+      name: 'Creative Caterers',
+      description: 'Award-winning catering service with gourmet cuisine',
+      specialty: 'Catering',
+      rating: 4.7,
+      image: 'https://via.placeholder.com/300'
+    }
+  ];
 
   // Animated values
   const headerAnimation = useRef(new Animated.Value(0)).current;
@@ -148,7 +210,7 @@ export default function EventApp() {
       title: 'Features',
       subtitle: 'Explore all',
       icon: 'grid',
-      colors: ['#4f46e5', '#818cf8'],
+      colors: ['#4f46e5', '#818cf8'] as [string, string],
       onPress: () => handleShowPopup('features'),
       badge: true,
     },
@@ -157,7 +219,7 @@ export default function EventApp() {
       title: 'Events',
       subtitle: 'Discover amazing',
       icon: 'calendar',
-      colors: ['#d946ef', '#f472b6'],
+      colors: ['#d946ef', '#f472b6'] as [string, string],
       onPress: () => handleSectionChange('events'),
     },
     {
@@ -165,7 +227,7 @@ export default function EventApp() {
       title: 'Artists',
       subtitle: 'Meet creators',
       icon: 'users',
-      colors: ['#0ea5e9', '#38bdf8'],
+      colors: ['#0ea5e9', '#38bdf8'] as [string, string],
       onPress: () => handleShowPopup('artists'),
     },
     {
@@ -173,7 +235,7 @@ export default function EventApp() {
       title: 'Tickets',
       subtitle: 'Book now',
       icon: 'ticket',
-      colors: ['#f59e0b', '#fbbf24'],
+      colors: ['#f59e0b', '#fbbf24'] as [string, string],
       onPress: () => handleShowPopup('tickets'),
     },
   ], []);
@@ -361,7 +423,6 @@ export default function EventApp() {
         >
           {/* Enhanced gradient background */}
           <View style={[styles.navItemGradient, {
-            background: `linear-gradient(135deg, ${item.colors[0]} 0%, ${item.colors[1]} 100%)`,
             backgroundColor: item.colors[0],
           }]}>
             {/* Glassmorphism overlay */}
@@ -694,71 +755,19 @@ export default function EventApp() {
   // ];
 
   const categories: Category[] = [
-    { id: 'all', name: 'All', icon: 'grid' },
-    { id: 'wedding', name: 'Wedding', icon: 'heart' },
+    { id: 'mariage', name: 'Mariage', icon: 'heart' },
+    { id: 'anniversaire', name: 'Anniversaire', icon: 'gift' },
+    { id: 'traiteur', name: 'Traiteur', icon: 'restaurant' },
+    { id: 'musique', name: 'Musique', icon: 'music' },
+    { id: 'neggafa', name: 'Neggafa', icon: 'user' },
     { id: 'conference', name: 'Conference', icon: 'briefcase' },
-    { id: 'photography', name: 'Photography', icon: 'camera' },
-    { id: 'kids', name: 'Kids', icon: 'smile' },
-    { id: 'music', name: 'DJ', icon: 'music' }];
-
-  const services: Service[] = [
-    {
-      id: 1,
-      title: 'Premium Catering',
-      available: 'Available',
-      location: 'City Center',
-      reviews: '4.9 (120 reviews)',
-      orders: '240 orders',
-      price: '$1,200',
-      image: 'https://via.placeholder.com/300'
-    },
-    {
-      id: 2,
-      title: 'Luxury Venue',
-      available: 'Limited',
-      location: 'Riverside',
-      reviews: '4.8 (95 reviews)',
-      orders: '180 orders',
-      price: '$3,500',
-      image: 'https://via.placeholder.com/300'
-    },
-    {
-      id: 3,
-      title: 'Event Planning',
-      available: 'Available',
-      location: 'Downtown',
-      reviews: '4.7 (85 reviews)',
-      orders: '120 orders',
-      price: '$900',
-      image: 'https://via.placeholder.com/300'
-    }
-  ];
-
-  const artists: Artist[] = [
-    {
-      id: 1,
-      name: 'Alex Morgan',
-      description: 'Professional wedding & event photographer with 8+ years experience',
-      specialty: 'Photography',
-      rating: 4.8,
-      image: 'https://via.placeholder.com/300'
-    },
-    {
-      id: 2,
-      name: 'DJ Maximus',
-      description: 'Top-rated DJ specializing in weddings and corporate events',
-      specialty: 'Music',
-      rating: 4.9,
-      image: 'https://via.placeholder.com/300'
-    },
-    {
-      id: 3,
-      name: 'Creative Caterers',
-      description: 'Award-winning catering service with gourmet cuisine',
-      specialty: 'Catering',
-      rating: 4.7,
-      image: 'https://via.placeholder.com/300'
-    }
+    { id: 'evenement', name: "Evenement d'entreprise", icon: 'users' },
+    { id: 'kermesse', name: 'Kermesse', icon: 'smile' },
+    { id: 'henna', name: 'Henna', icon: 'leaf' },
+    { id: 'photographie', name: 'Photographie', icon: 'camera' },
+    { id: 'animation', name: 'Animation', icon: 'film' },
+    { id: 'decoration', name: 'Decoration', icon: 'award' },
+    { id: 'buffet', name: 'Buffet', icon: 'coffee' },
   ];
 
   const featuredServices: FeaturedService[] = [
@@ -838,7 +847,53 @@ export default function EventApp() {
                 {/* Events Section */}
                 {activeSection === 'events' && (
                   <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-                    {/* Enhanced Categories */}
+                    {/* Enhanced Trending Events */}
+                    <View style={styles.enhancedTrendingSection}>
+                      <View style={styles.enhancedSectionHeader}>
+                        <View>
+                          <Text style={styles.enhancedSectionTitle}>Trending Now</Text>
+                          <Text style={styles.sectionSubtitle}>Popular events this week</Text>
+                        </View>
+                        <TouchableOpacity style={styles.seeAllButton} onPress={() => router.push('/(client)/tickets')}>
+                          <Text style={styles.seeAllText}>See all</Text>
+                          <Icon name="arrow-right" size={14} color="#4f46e5" />
+                        </TouchableOpacity>
+                      </View>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={styles.trendingScroll}
+                      >
+                        {dummyTickets.slice(0, 8).map((ticket, index) => (
+                          <TouchableOpacity
+                            key={ticket.id}
+                            style={styles.enhancedTrendingCard}
+                            activeOpacity={0.9}
+                            onPress={() => router.push({ pathname: '/(client)/(hidden)/ticket/[ticket]', params: { ticket: ticket.id.toString() } })}
+                          >
+                            <View style={[
+                              styles.trendingImageContainer,
+                              { backgroundColor: cardGradients[index % cardGradients.length][0] }
+                            ]}>
+                              <Icon name="calendar" size={24} color="#ffffff" />
+                              <View style={styles.trendingCardOverlay} />
+                            </View>
+                            <View style={styles.enhancedTrendingContent}>
+                              <Text style={styles.enhancedTrendingTitle}>{ticket.title}</Text>
+                              <View style={styles.trendingInfo}>
+                                <Icon name="map-pin" size={12} color="#6b7280" />
+                                <Text style={styles.trendingInfoText}>{ticket.venue}, {ticket.city}</Text>
+                              </View>
+                              <View style={styles.enhancedTrendingPrice}>
+                                <Text style={styles.trendingPriceText}>{ticket.price} MAD</Text>
+                              </View>
+                            </View>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+
+                    {/* Enhanced Categories - moved below Trending Now */}
                     <View style={styles.enhancedCategoriesSection}>
                       <Text style={styles.enhancedSectionTitle}>Categories</Text>
                       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll}>
@@ -871,64 +926,19 @@ export default function EventApp() {
                       </ScrollView>
                     </View>
 
-                    {/* Enhanced Trending Events */}
-                    <View style={styles.enhancedTrendingSection}>
-                      <View style={styles.enhancedSectionHeader}>
-                        <View>
-                          <Text style={styles.enhancedSectionTitle}>Trending Now</Text>
-                          <Text style={styles.sectionSubtitle}>Popular events this week</Text>
-                        </View>
-                        <TouchableOpacity style={styles.seeAllButton}>
-                          <Text style={styles.seeAllText}>See all</Text>
-                          <Icon name="arrow-right" size={14} color="#4f46e5" />
-                        </TouchableOpacity>
-                      </View>
-                      <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        style={styles.trendingScroll}
-                      >
-                        {events.map((event, index) => (
-                          <TouchableOpacity
-                            key={event.id}
-                            style={styles.enhancedTrendingCard}
-                            activeOpacity={0.9}
-                          >
-                            <View style={[
-                              styles.trendingImageContainer,
-                              { backgroundColor: cardGradients[index % cardGradients.length][0] }
-                            ]}>
-                              <Icon name="calendar" size={24} color="#ffffff" />
-                              <View style={styles.trendingCardOverlay} />
-                            </View>
-                            <View style={styles.enhancedTrendingContent}>
-                              <Text style={styles.enhancedTrendingTitle}>{event.name}</Text>
-                              <View style={styles.trendingInfo}>
-                                <Icon name="map-pin" size={12} color="#6b7280" />
-                                <Text style={styles.trendingInfoText}>{event.location}</Text>
-                              </View>
-                              <View style={styles.enhancedTrendingPrice}>
-                                <Text style={styles.trendingPriceText}>{event.price}</Text>
-                              </View>
-                            </View>
-                          </TouchableOpacity>
-                        ))}
-                      </ScrollView>
-                    </View>
-
                     {/* Enhanced Events List */}
                     <View style={styles.enhancedEventsSection}>
                       <View style={styles.enhancedSectionHeader}>
                         <View>
-                          <Text style={styles.enhancedSectionTitle}>Upcoming Events</Text>
-                          <Text style={styles.sectionSubtitle}>Don't miss out on these amazing events</Text>
+                          <Text style={styles.enhancedSectionTitle}>Top Services</Text>
+                          <Text style={styles.sectionSubtitle}>Don't miss out on these amazing services</Text>
                         </View>
-                        <TouchableOpacity style={styles.seeAllButton}>
+                        <TouchableOpacity style={styles.seeAllButton} onPress={() => router.push({ pathname: '/(client)/search' })}>
                           <Text style={styles.seeAllText}>See all</Text>
                           <Icon name="arrow-right" size={14} color="#4f46e5" />
                         </TouchableOpacity>
                       </View>
-                      {filteredEvents.map((event, index) => renderEventCard(event, index))}
+                      {services.slice(0, 8).map((service, index) => renderServiceCard(service, index))}
                     </View>
                   </ScrollView>
                 )}

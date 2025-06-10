@@ -1,16 +1,22 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Theme } from '../../constants/theme';
+import Icon from 'react-native-vector-icons/Feather';
 
 const CATEGORIES = [
-  'All',
-  'Music',
-  'Photography',
-  'Culinary Arts',
-  'Visual Arts',
-  'Dance',
-  'Comedy',
-  'Acting',
+  { name: 'Mariage', icon: 'heart' },
+  { name: 'Anniversaire', icon: 'gift' },
+  { name: 'Traiteur', icon: 'coffee' },
+  { name: 'Musique', icon: 'music' },
+  { name: 'Neggafa', icon: 'user' },
+  { name: 'Conference', icon: 'briefcase' },
+  { name: "Evenement d'entreprise", icon: 'users' },
+  { name: 'Kermesse', icon: 'smile' },
+  { name: 'Henna', icon: 'leaf' },
+  { name: 'Photographie', icon: 'camera' },
+  { name: 'Animation', icon: 'film' },
+  { name: 'Decoration', icon: 'award' },
+  { name: 'Buffet', icon: 'coffee' },
 ];
 
 interface CategorySelectorProps {
@@ -31,21 +37,28 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
       >
         {CATEGORIES.map((category) => (
           <TouchableOpacity
-            key={category}
+            key={category.name}
             style={[
               styles.categoryButton,
-              selectedCategory === category && styles.selectedCategory,
+              selectedCategory === category.name && styles.selectedCategory,
             ]}
-            onPress={() => onSelectCategory(category)}
+            onPress={() => onSelectCategory(category.name)}
             activeOpacity={0.7}
           >
+            <View style={styles.iconWrapper}>
+              <Icon
+                name={category.icon}
+                size={16}
+                color={selectedCategory === category.name ? Theme.colors.secondary : Theme.colors.primary}
+              />
+            </View>
             <Text
               style={[
                 styles.categoryText,
-                selectedCategory === category && styles.selectedCategoryText,
+                selectedCategory === category.name && styles.selectedCategoryText,
               ]}
             >
-              {category}
+              {category.name}
             </Text>
           </TouchableOpacity>
         ))}
@@ -81,5 +94,10 @@ const styles = StyleSheet.create({
   },
   selectedCategoryText: {
     color: Theme.colors.secondary,
+  },
+  iconWrapper: {
+    marginBottom: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

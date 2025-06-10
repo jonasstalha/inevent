@@ -12,12 +12,7 @@ import { Button } from '@/src/components/common/Button';
 import { Card } from '@/src/components/common/Card';
 import { Theme } from '@/src/constants/theme';
 import * as Google from 'expo-auth-session/providers/google';
-
-const mockUsers = [
-  { email: 'admin@example.com', password: 'admin123', role: 'admin', name: 'Admin User' },
-  { email: 'artist@example.com', password: 'artist123', role: 'artist', name: 'Artist User' },
-  { email: 'client@example.com', password: 'client123', role: 'client', name: 'Client User' }
-];
+import { registerWithEmail } from '@/src/firebase/firebaseAuth';
 
 // TypeScript interfaces
 interface LoginValues {
@@ -85,41 +80,33 @@ export default function AuthScreen() {
   ) => {
     try {
       setSubmitting(true);
-      
-      // Check mock users first (for development/testing)
-      const foundUser = mockUsers.find(
-        (user) => user.email === values.email && user.password === values.password
-      );
-
-      if (foundUser) {
-        // Use the login function from AuthContext
+      // Remove mockUsers logic, use Firebase Auth only
+      try {
         await login(values.email, values.password);
-        
-        // Navigate based on role
-        switch (foundUser.role) {
+        // Fetch user role from Firestore
+        // Assume getUserRole is available from userService
+        const { getUserRole } = await import('@/src/firebase/userService');
+        // Use email as uid for getUserRole (if that's how you store it), or get uid from auth
+        const role = await getUserRole(values.email);
+        // Navigate based on role using correct Expo Router type
+        switch (role) {
           case 'client':
-            router.push('/(client)'); // or '/ClientDashboard' if that's the file name
+            router.push({ pathname: '/(client)' });
             break;
           case 'artist':
-            router.push('/(artist)');
+            router.push({ pathname: '/(artist)/ArtistPlatform' });
             break;
           case 'admin':
-            router.push('/(admin)'); // or '/AdminDashboard' if that's the file name
+            router.push({ pathname: '/(admin)' });
             break;
           default:
             Alert.alert('Error', 'Unknown user role');
         }
-      } else {
-        // Try actual login through AuthContext
-        try {
-          await login(values.email, values.password);
-          // Navigation will be handled by AuthContext or you can add it here
-        } catch (authError) {
-          setErrors({ 
-            email: 'Invalid email or password',
-            password: 'Invalid email or password'
-          });
-        }
+      } catch (authError) {
+        setErrors({ 
+          email: 'Invalid email or password',
+          password: 'Invalid email or password'
+        });
       }
     } catch (error: unknown) {
       console.error('Login error:', error);
@@ -133,6 +120,9 @@ export default function AuthScreen() {
     }
   };
 
+  // Fix: registerWithEmail expects 3 arguments (email, password, name)
+  // and returns userCredential
+  // Update usage to pass name and handle return value
   const handleRegister = async (
     values: RegisterValues,
     { setSubmitting, setErrors }: { 
@@ -143,26 +133,30 @@ export default function AuthScreen() {
     try {
       setSubmitting(true);
       const role = values.role as 'artist' | 'client' | 'admin';
-      await register(values.email, values.password, values.name, values.phone, role);
-      
+      // Pass name as third argument
+      const userCredential = await registerWithEmail(values.email, values.password, values.name);
+      const uid = userCredential.user.uid;
+      // Now create the user profile in Firestore with UID
+      await createUserProfile(uid, values.email, values.phone, role);
       // Navigate based on role after successful registration
       switch (role) {
         case 'client':
-          router.push('/(client)');
+          router.push({ pathname: '/(client)' });
           break;
         case 'artist':
-          router.push('/ArtistPlatform');
+          router.push({ pathname: '/(artist)/ArtistPlatform' });
+          break;
+        case 'admin':
+          router.push({ pathname: '/(admin)' });
           break;
         default:
-          router.push('/dashboard');
+          Alert.alert('Error', 'Unknown user role');
       }
-    } catch (error: unknown) {
-      console.error('Registration error:', error);
-      if (error instanceof Error) {
-        setErrors({ email: error.message });
-      } else {
-        setErrors({ email: 'Registration failed. Please try again.' });
-      }
+    } catch (authError) {
+      setErrors({ 
+        email: 'Invalid email or password',
+        password: 'Invalid email or password'
+      });
     } finally {
       setSubmitting(false);
     }

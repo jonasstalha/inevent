@@ -17,7 +17,7 @@ export default function WelcomeScreen() {
   const router = useRouter();
 
   const handlePress = () => {
-    router.replace('/(client)'); // Go to main client app
+    router.replace({ pathname: '/(client)' }); // Go to main client app index
   };
 
   return (
