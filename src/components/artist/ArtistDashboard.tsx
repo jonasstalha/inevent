@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, Image, TextInput, TouchableOpacity, ScrollView, StyleSheet, Button, SafeAreaView, Platform } from 'react-native';
+import { View, Text, Image, TextInput, TouchableOpacity, ScrollView, StyleSheet, Button, SafeAreaView, Platform, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useArtistStore } from './ArtistStore';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const ArtistMobileApp = () => {
   const {
@@ -14,6 +15,13 @@ const ArtistMobileApp = () => {
     addCategory,
     updateCategory,
     deleteCategory,
+    settings,
+    toggleDarkMode,
+    toggleNotifications,
+    updateLanguage,
+    addPaymentMethod,
+    removePaymentMethod,
+    updateSecuritySettings,
   } = useArtistStore();
 
   const [activeTab, setActiveTab] = useState('home');
@@ -119,47 +127,70 @@ const ArtistMobileApp = () => {
 
   // Home Page Component
   const HomePage = () => (
-    <ScrollView style={styles.container}>
+    <ScrollView style={[styles.container, { paddingTop: insets.top }]}>
       {/* Profile Preview */}
-      <View style={styles.card}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
-          <Image 
-            source={{ uri: artistProfile.image }} 
-            style={{ width: 64, height: 64, borderRadius: 32, marginRight: 16 }}
-          />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.title}>{artistProfile.name}</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-              <Text style={{ fontSize: 16 }}>⭐</Text>
-              <Text style={{ fontSize: 14, color: '#666', marginLeft: 4 }}>{artistProfile.rating} ({artistProfile.reviewsCount} avis)</Text>
+      <View style={styles.profileCard}>
+        <LinearGradient
+          colors={['#6a0dad', '#4a148c']}
+          style={styles.profileGradient}
+        >
+          <View style={styles.profileHeader}>
+            <Image 
+              source={{ uri: artistProfile.image }} 
+              style={styles.profileImage}
+            />
+            <View style={styles.profileInfo}>
+              <Text style={styles.profileName}>{artistProfile.name}</Text>
+              <View style={styles.ratingContainer}>
+                <Text style={styles.ratingStar}>⭐</Text>
+                <Text style={styles.ratingText}>{artistProfile.rating} ({artistProfile.reviewsCount} reviews)</Text>
+              </View>
+              <Text style={styles.profileDescription}>{artistProfile.description}</Text>
             </View>
-            <Text style={{ fontSize: 14, color: '#666' }}>{artistProfile.description}</Text>
+          </View>
+          <TouchableOpacity style={styles.viewProfileButton}>
+            <Text style={styles.viewProfileText}>👁️ View Public Profile</Text>
+          </TouchableOpacity>
+        </LinearGradient>
+      </View>
+
+      {/* Credits and Wallet Balance */}
+      <View style={styles.accountCard}>
+        <Text style={styles.cardTitle}>My Account</Text>
+        <View style={styles.balanceContainer}>
+          <View style={styles.balanceItem}>
+            <Text style={styles.balanceLabel}>Available Credits</Text>
+            <Text style={styles.balanceValue}>{credits}</Text>
+          </View>
+          <View style={styles.balanceDivider} />
+          <View style={styles.balanceItem}>
+            <Text style={styles.balanceLabel}>Wallet Balance</Text>
+            <Text style={styles.balanceValue}>{walletBalance.toFixed(2)} MAD</Text>
           </View>
         </View>
-        <TouchableOpacity style={styles.buttonBlue}>
-          <Text style={{ color: 'white', fontWeight: 'bold' }}>👁️ Voir mon profil public</Text>
+        <TouchableOpacity style={styles.addFundsButton}>
+          <Text style={styles.addFundsText}>➕ Add Funds</Text>
         </TouchableOpacity>
       </View>
-      {/* Credits and Wallet Balance */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Mon compte</Text>
-        <View style={styles.rowBetween}><Text>Crédits disponibles :</Text><Text style={styles.bold}>{credits} crédits</Text></View>
-        <View style={styles.rowBetween}><Text>Solde du portefeuille :</Text><Text style={styles.bold}>{walletBalance.toFixed(2)} MAD</Text></View>
-        <TouchableOpacity style={styles.buttonGreen}>
-          <Text style={{ color: 'white', fontWeight: 'bold' }}>➕ Ajouter des fonds</Text>
-        </TouchableOpacity>
-      </View>
+
       {/* Add Service */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Ajouter un service</Text>
+      <View style={styles.serviceCard}>
+        <Text style={styles.cardTitle}>Add New Service</Text>
         <TextInput 
-          placeholder="Titre du service" 
+          placeholder="Service Title" 
           value={newService.title}
           onChangeText={text => setNewService({ ...newService, title: text })}
           style={styles.input}
+          placeholderTextColor="#666"
         />
-        <TouchableOpacity onPress={() => setShowCategoryDropdown(!showCategoryDropdown)} style={styles.input}>
-          <Text>{selectedCategory?.name || 'Choisir une catégorie'}</Text>
+        <TouchableOpacity 
+          onPress={() => setShowCategoryDropdown(!showCategoryDropdown)} 
+          style={[styles.input, styles.categorySelector]}
+        >
+          <Text style={selectedCategory ? styles.categoryText : styles.placeholderText}>
+            {selectedCategory?.name || 'Select Category'}
+          </Text>
+          <Ionicons name="chevron-down" size={20} color="#666" />
         </TouchableOpacity>
         {showCategoryDropdown && (
           <View style={styles.dropdown}>
@@ -172,46 +203,47 @@ const ArtistMobileApp = () => {
                 }}
                 style={styles.dropdownItem}
               >
-                <Text>{cat}</Text>
+                <Text style={styles.dropdownItemText}>{cat}</Text>
               </TouchableOpacity>
             ))}
           </View>
         )}
         <TextInput 
-          placeholder="Prix de base" 
+          placeholder="Base Price" 
           value={newService.basePrice}
           onChangeText={text => setNewService({ ...newService, basePrice: text })}
           style={styles.input}
           keyboardType="numeric"
+          placeholderTextColor="#666"
         />
         <TextInput 
-          placeholder="Description du service" 
+          placeholder="Service Description" 
           value={newService.description}
           onChangeText={text => setNewService({ ...newService, description: text })}
-          style={[styles.input, { height: 80 }]}
+          style={[styles.input, styles.textArea]}
           multiline
+          placeholderTextColor="#666"
         />
-        <TouchableOpacity onPress={addService} style={styles.buttonBlue}>
-          <Text style={{ color: 'white', fontWeight: 'bold' }}>➕ Ajouter le service</Text>
+        <TouchableOpacity onPress={addService} style={styles.addServiceButton}>
+          <Text style={styles.addServiceText}>➕ Add Service</Text>
         </TouchableOpacity>
       </View>
+
       {/* Services List */}
       {gigs.length > 0 && (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Mes services</Text>
-          {gigs.map(gig => (
-            <View key={gig.id} style={styles.serviceCard}>
-              <View style={styles.rowBetween}>
-                <Text style={styles.bold}>{gig.title}</Text>
-                <Text style={styles.active}>Actif</Text>
-              </View>
-              <Text style={{ color: '#666', marginBottom: 8 }}>{gig.description}</Text>
-              <View style={styles.rowBetween}>
-                <Text style={{ color: '#2563eb', fontWeight: 'bold' }}>{gig.tickets[0]?.price || 'N/A'} MAD</Text>
-                <View style={{ flexDirection: 'row' }}>
-                  <TouchableOpacity style={styles.iconBtn}><Text>✏️</Text></TouchableOpacity>
-                  <TouchableOpacity style={styles.iconBtn} onPress={() => deleteGig(gig.id)}><Text>🗑️</Text></TouchableOpacity>
-                </View>
+        <View style={styles.servicesCard}>
+          <Text style={styles.cardTitle}>My Services</Text>
+          {gigs.map((gig, index) => (
+            <View key={index} style={styles.serviceItem}>
+              <Text style={styles.serviceTitle}>{gig.title}</Text>
+              <Text style={styles.serviceDescription}>{gig.description}</Text>
+              <View style={styles.serviceActions}>
+                <TouchableOpacity style={styles.actionButton}>
+                  <Ionicons name="pencil" size={20} color="#6a0dad" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionButton}>
+                  <Ionicons name="trash" size={20} color="#ff4444" />
+                </TouchableOpacity>
               </View>
             </View>
           ))}
@@ -220,133 +252,304 @@ const ArtistMobileApp = () => {
     </ScrollView>
   );
 
-  // --- Calendar Page (Events/Tickets) ---
+  // Calendar/Tickets Page Component
   const CalendarPage = () => (
-    <ScrollView style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Créer un événement</Text>
-        <TextInput
-          placeholder="Titre de l'événement"
-          value={newEvent.title}
-          onChangeText={text => setNewEvent({ ...newEvent, title: text })}
-          style={styles.input}
-        />
-        <TextInput
-          placeholder="Description"
-          value={newEvent.description}
-          onChangeText={text => setNewEvent({ ...newEvent, description: text })}
-          style={[styles.input, { height: 60 }]}
-          multiline
-        />
-        <TextInput
-          placeholder="Date (ex: 2025-06-10)"
-          value={newEvent.date}
-          onChangeText={text => setNewEvent({ ...newEvent, date: text })}
-          style={styles.input}
-        />
-        <Text style={{ marginTop: 8, marginBottom: 4, fontWeight: 'bold' }}>Types de billets</Text>
-        {newEvent.ticketTypes.map((ticket, idx) => (
-          <View key={idx} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-            <TextInput
-              placeholder="Nom"
-              value={ticket.name}
-              onChangeText={text => updateTicketType(idx, 'name', text)}
-              style={[styles.input, { flex: 1, marginRight: 4 }]}
-            />
-            <TextInput
-              placeholder="Prix"
-              value={ticket.price}
-              onChangeText={text => updateTicketType(idx, 'price', text)}
-              style={[styles.input, { width: 70, marginRight: 4 }]}
-              keyboardType="numeric"
-            />
-            <TextInput
-              placeholder="Qté"
-              value={ticket.quantity}
-              onChangeText={text => updateTicketType(idx, 'quantity', text)}
-              style={[styles.input, { width: 60 }]}
-              keyboardType="numeric"
-            />
-          </View>
-        ))}
-        <TouchableOpacity onPress={addTicketType} style={[styles.buttonBlue, { marginTop: 0, backgroundColor: '#e0e7ff' }]}> 
-          <Text style={{ color: '#2563eb', fontWeight: 'bold' }}>+ Ajouter un type de billet</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={addEvent} style={styles.buttonPurple}>
-          <Text style={{ color: 'white', fontWeight: 'bold' }}>🎫 Publier l'événement (10 crédits)</Text>
-        </TouchableOpacity>
-      </View>
-      {/* Events List */}
-      {gigs.filter(g => g.tickets.length > 0).length > 0 && (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Mes événements</Text>
-          {gigs.filter(g => g.tickets.length > 0).map(gig => (
-            <View key={gig.id} style={styles.serviceCard}>
-              <View style={styles.rowBetween}>
-                <Text style={styles.bold}>{gig.title}</Text>
-                <Text style={styles.active}>Actif</Text>
-              </View>
-              <Text style={{ color: '#666', marginBottom: 8 }}>{gig.description}</Text>
-              <Text style={{ color: '#888', fontSize: 12 }}>Date: N/A</Text>
-              <Text style={{ fontWeight: 'bold', marginTop: 4 }}>Billets:</Text>
-              {gig.tickets.map(t => (
-                <Text key={t.id} style={{ fontSize: 13 }}>- {t.name}: {t.price} MAD ({t.quantity} places)</Text>
-              ))}
-              <View style={styles.rowBetween}>
-                <TouchableOpacity style={styles.iconBtn}><Text>✏️</Text></TouchableOpacity>
-                <TouchableOpacity style={styles.iconBtn} onPress={() => deleteGig(gig.id)}><Text>🗑️</Text></TouchableOpacity>
-              </View>
+    <ScrollView style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Upcoming Events */}
+      <View style={styles.sectionCard}>
+        <Text style={styles.sectionTitle}>Upcoming Events</Text>
+        <View style={styles.eventCard}>
+          <View style={styles.eventHeader}>
+            <View style={styles.eventDate}>
+              <Text style={styles.eventDay}>15</Text>
+              <Text style={styles.eventMonth}>JUN</Text>
             </View>
-          ))}
-        </View>
-      )}
-    </ScrollView>
-  );
-
-  // --- Analytics Page (Dashboard) ---
-  const AnalyticsPage = () => (
-    <ScrollView style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Statistiques</Text>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
-          <View style={styles.analyticsCard}><MaterialCommunityIcons name="cash" size={28} color="#22c55e" /><Text style={styles.analyticsValue}>{walletBalance.toFixed(2)} MAD</Text><Text style={styles.analyticsLabel}>Revenus</Text></View>
-          <View style={styles.analyticsCard}><Ionicons name="ticket-outline" size={28} color="#6366f1" /><Text style={styles.analyticsValue}>{gigs.reduce((acc, g) => acc + g.tickets.length, 0)}</Text><Text style={styles.analyticsLabel}>Billets</Text></View>
-          <View style={styles.analyticsCard}><FontAwesome5 name="users" size={24} color="#f59e42" /><Text style={styles.analyticsValue}>124</Text><Text style={styles.analyticsLabel}>Clients</Text></View>
-        </View>
-        <Text style={{ fontWeight: 'bold', marginBottom: 6 }}>Commandes récentes</Text>
-        {[1, 2, 3].map(order => (
-          <View key={order} style={styles.orderCard}>
-            <Text style={{ fontWeight: 'bold' }}>Commande #{order}001</Text>
-            <Text style={{ color: '#666' }}>Service: Photographie</Text>
-            <Text style={{ color: '#22c55e', fontWeight: 'bold' }}>+850 MAD</Text>
+            <View style={styles.eventInfo}>
+              <Text style={styles.eventTitle}>Summer Music Festival</Text>
+              <Text style={styles.eventLocation}>📍 Central Park, New York</Text>
+              <Text style={styles.eventTime}>🕒 7:00 PM - 11:00 PM</Text>
+            </View>
           </View>
-        ))}
+          <View style={styles.eventStats}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>150</Text>
+              <Text style={styles.statLabel}>Tickets Sold</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>$3,750</Text>
+              <Text style={styles.statLabel}>Revenue</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>85%</Text>
+              <Text style={styles.statLabel}>Capacity</Text>
+            </View>
+          </View>
+        </View>
+      </View>
+
+      {/* Ticket Management */}
+      <View style={styles.sectionCard}>
+        <Text style={styles.sectionTitle}>Ticket Management</Text>
+        <View style={styles.ticketTypeCard}>
+          <View style={styles.ticketTypeHeader}>
+            <Text style={styles.ticketTypeTitle}>VIP Pass</Text>
+            <Text style={styles.ticketTypePrice}>$50</Text>
+          </View>
+          <View style={styles.ticketTypeStats}>
+            <View style={styles.ticketStat}>
+              <Text style={styles.ticketStatValue}>45/100</Text>
+              <Text style={styles.ticketStatLabel}>Sold</Text>
+            </View>
+            <View style={styles.ticketStat}>
+              <Text style={styles.ticketStatValue}>$2,250</Text>
+              <Text style={styles.ticketStatLabel}>Revenue</Text>
+            </View>
+          </View>
+          <TouchableOpacity style={styles.editTicketButton}>
+            <Ionicons name="pencil" size={20} color="#6a0dad" />
+            <Text style={styles.editTicketText}>Edit Ticket</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Create New Event */}
+      <View style={styles.sectionCard}>
+        <Text style={styles.sectionTitle}>Create New Event</Text>
+        <TextInput 
+          placeholder="Event Title"
+          style={styles.input}
+          placeholderTextColor="#666"
+        />
+        <TextInput 
+          placeholder="Event Description"
+          style={[styles.input, styles.textArea]}
+          multiline
+          placeholderTextColor="#666"
+        />
+        <TextInput 
+          placeholder="Date (DD/MM/YYYY)"
+          style={styles.input}
+          placeholderTextColor="#666"
+        />
+        <TextInput 
+          placeholder="Time"
+          style={styles.input}
+          placeholderTextColor="#666"
+        />
+        <TouchableOpacity style={styles.createEventButton}>
+          <Text style={styles.createEventText}>Create Event</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
 
-  // --- Settings Page ---
-  const SettingsPage = () => (
-    <ScrollView style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Paramètres du compte</Text>
-        <TouchableOpacity style={styles.settingsBtn}><Ionicons name="person-outline" size={20} color="#2563eb" /><Text style={styles.settingsBtnText}>Informations personnelles</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.settingsBtn}><Ionicons name="notifications-outline" size={20} color="#f59e42" /><Text style={styles.settingsBtnText}>Notifications</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.settingsBtn}><Ionicons name="lock-closed-outline" size={20} color="#6366f1" /><Text style={styles.settingsBtnText}>Confidentialité</Text></TouchableOpacity>
-        <TouchableOpacity style={styles.settingsBtn}><Ionicons name="help-circle-outline" size={20} color="#22c55e" /><Text style={styles.settingsBtnText}>Aide & Support</Text></TouchableOpacity>
-      </View>
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Crédits</Text>
-        <View style={styles.rowBetween}><Text>Crédits disponibles :</Text><Text style={styles.bold}>{credits} crédits</Text></View>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 }}>
-          <TouchableOpacity style={styles.creditBtn} onPress={() => setCredits(credits + 10)}><Text>+10</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.creditBtn} onPress={() => setCredits(credits + 25)}><Text>+25</Text></TouchableOpacity>
-          <TouchableOpacity style={styles.creditBtn} onPress={() => setCredits(credits + 50)}><Text>+50</Text></TouchableOpacity>
+  // Analytics Page Component
+  const AnalyticsPage = () => (
+    <ScrollView style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Overview Stats */}
+      <View style={styles.statsGrid}>
+        <View style={styles.statCard}>
+          <View style={styles.statIconContainer}>
+            <Ionicons name="ticket" size={24} color="#6a0dad" />
+          </View>
+          <Text style={styles.statNumber}>1,234</Text>
+          <Text style={styles.statLabel}>Total Tickets Sold</Text>
+        </View>
+        <View style={styles.statCard}>
+          <View style={styles.statIconContainer}>
+            <Ionicons name="cash" size={24} color="#4CAF50" />
+          </View>
+          <Text style={styles.statNumber}>$12,345</Text>
+          <Text style={styles.statLabel}>Total Revenue</Text>
+        </View>
+        <View style={styles.statCard}>
+          <View style={styles.statIconContainer}>
+            <Ionicons name="people" size={24} color="#2196F3" />
+          </View>
+          <Text style={styles.statNumber}>567</Text>
+          <Text style={styles.statLabel}>Active Customers</Text>
+        </View>
+        <View style={styles.statCard}>
+          <View style={styles.statIconContainer}>
+            <Ionicons name="star" size={24} color="#FFC107" />
+          </View>
+          <Text style={styles.statNumber}>4.8</Text>
+          <Text style={styles.statLabel}>Average Rating</Text>
         </View>
       </View>
-      <TouchableOpacity style={styles.logoutBtn}><Text style={{ color: '#ef4444', fontWeight: 'bold' }}>Se déconnecter</Text></TouchableOpacity>
+
+      {/* Revenue Chart */}
+      <View style={styles.sectionCard}>
+        <Text style={styles.sectionTitle}>Revenue Overview</Text>
+        <View style={styles.chartContainer}>
+          <View style={styles.chartBar}>
+            <View style={[styles.chartFill, { height: '60%' }]} />
+            <Text style={styles.chartLabel}>Jan</Text>
+          </View>
+          <View style={styles.chartBar}>
+            <View style={[styles.chartFill, { height: '80%' }]} />
+            <Text style={styles.chartLabel}>Feb</Text>
+          </View>
+          <View style={styles.chartBar}>
+            <View style={[styles.chartFill, { height: '40%' }]} />
+            <Text style={styles.chartLabel}>Mar</Text>
+          </View>
+          <View style={styles.chartBar}>
+            <View style={[styles.chartFill, { height: '90%' }]} />
+            <Text style={styles.chartLabel}>Apr</Text>
+          </View>
+          <View style={styles.chartBar}>
+            <View style={[styles.chartFill, { height: '70%' }]} />
+            <Text style={styles.chartLabel}>May</Text>
+          </View>
+          <View style={styles.chartBar}>
+            <View style={[styles.chartFill, { height: '85%' }]} />
+            <Text style={styles.chartLabel}>Jun</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Popular Events */}
+      <View style={styles.sectionCard}>
+        <Text style={styles.sectionTitle}>Popular Events</Text>
+        <View style={styles.popularEventCard}>
+          <Image 
+            source={{ uri: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3' }}
+            style={styles.popularEventImage}
+          />
+          <View style={styles.popularEventInfo}>
+            <Text style={styles.popularEventTitle}>Summer Music Festival</Text>
+            <Text style={styles.popularEventStats}>1,200 tickets sold • $24,000 revenue</Text>
+          </View>
+        </View>
+      </View>
     </ScrollView>
   );
+
+  // Settings Page Component
+  const SettingsPage = () => {
+    const handleEditProfile = () => {
+      // Navigate to profile edit page
+      // This would typically use navigation.navigate('EditProfile')
+      console.log('Navigate to edit profile');
+    };
+
+    const handleNotifications = () => {
+      toggleNotifications();
+    };
+
+    const handleSecurity = () => {
+      // Navigate to security settings
+      // This would typically use navigation.navigate('SecuritySettings')
+      console.log('Navigate to security settings');
+    };
+
+    const handlePaymentMethods = () => {
+      // Navigate to payment methods
+      // This would typically use navigation.navigate('PaymentMethods')
+      console.log('Navigate to payment methods');
+    };
+
+    const handleLanguage = () => {
+      // Show language selection modal
+      // This would typically show a modal with language options
+      const languages = ['English', 'Spanish', 'French', 'German'];
+      const currentIndex = languages.indexOf(settings.language);
+      const nextLanguage = languages[(currentIndex + 1) % languages.length];
+      updateLanguage(nextLanguage);
+    };
+
+    const handleDarkMode = () => {
+      toggleDarkMode();
+    };
+
+    const handleLogout = () => {
+      // Handle logout logic
+      // This would typically clear auth tokens and navigate to login
+      console.log('Logging out...');
+    };
+
+    return (
+      <ScrollView style={[styles.container, { paddingTop: insets.top }]}>
+        {/* Profile Settings */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Profile Settings</Text>
+          <TouchableOpacity style={styles.settingItem} onPress={handleEditProfile}>
+            <Ionicons name="person" size={24} color="#6a0dad" />
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Edit Profile</Text>
+              <Text style={styles.settingDescription}>Update your profile information</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#666" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.settingItem} onPress={handleNotifications}>
+            <Ionicons name="notifications" size={24} color="#6a0dad" />
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Notifications</Text>
+              <Text style={styles.settingDescription}>
+                {settings.notificationsEnabled ? 'Notifications are enabled' : 'Notifications are disabled'}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#666" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Account Settings */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>Account Settings</Text>
+          <TouchableOpacity style={styles.settingItem} onPress={handleSecurity}>
+            <Ionicons name="lock-closed" size={24} color="#6a0dad" />
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Security</Text>
+              <Text style={styles.settingDescription}>
+                {settings.securitySettings.twoFactorEnabled ? '2FA Enabled' : '2FA Disabled'}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#666" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.settingItem} onPress={handlePaymentMethods}>
+            <Ionicons name="card" size={24} color="#6a0dad" />
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Payment Methods</Text>
+              <Text style={styles.settingDescription}>
+                {settings.paymentMethods.length} payment methods added
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#666" />
+          </TouchableOpacity>
+        </View>
+
+        {/* App Settings */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionTitle}>App Settings</Text>
+          <TouchableOpacity style={styles.settingItem} onPress={handleLanguage}>
+            <Ionicons name="language" size={24} color="#6a0dad" />
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Language</Text>
+              <Text style={styles.settingDescription}>{settings.language}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#666" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.settingItem} onPress={handleDarkMode}>
+            <Ionicons name="moon" size={24} color="#6a0dad" />
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingLabel}>Dark Mode</Text>
+              <Text style={styles.settingDescription}>{settings.isDarkMode ? 'On' : 'Off'}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#666" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Logout Button */}
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Ionicons name="log-out" size={24} color="#fff" />
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    );
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -364,69 +567,536 @@ const ArtistMobileApp = () => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#f9fafb' }}>
-      <View style={{ flex: 1 }}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>{artistProfile.name}</Text>
-          <Text style={{ color: '#666' }}>{artistProfile.description}</Text>
-        </View>
-        {/* Content */}
-        <View style={{ flex: 1 }}>{renderContent()}</View>
+    <View style={[styles.mainContainer, { paddingTop: insets.top }]}>
+      <StatusBar barStyle="light-content" backgroundColor="#6a0dad" />
+      {renderContent()}
+      <View style={[styles.tabBar, { paddingBottom: insets.bottom }]}>
+        <TouchableOpacity 
+          style={[styles.tabItem, activeTab === 'home' && styles.activeTab]} 
+          onPress={() => setActiveTab('home')}
+        >
+          <Ionicons name="home" size={24} color={activeTab === 'home' ? '#6a0dad' : '#666'} />
+          <Text style={[styles.tabText, activeTab === 'home' && styles.activeTabText]}>Home</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.tabItem, activeTab === 'calendar' && styles.activeTab]} 
+          onPress={() => setActiveTab('calendar')}
+        >
+          <Ionicons name="calendar" size={24} color={activeTab === 'calendar' ? '#6a0dad' : '#666'} />
+          <Text style={[styles.tabText, activeTab === 'calendar' && styles.activeTabText]}>Calendar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.tabItem, activeTab === 'analytics' && styles.activeTab]} 
+          onPress={() => setActiveTab('analytics')}
+        >
+          <Ionicons name="stats-chart" size={24} color={activeTab === 'analytics' ? '#6a0dad' : '#666'} />
+          <Text style={[styles.tabText, activeTab === 'analytics' && styles.activeTabText]}>Analytics</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.tabItem, activeTab === 'settings' && styles.activeTab]} 
+          onPress={() => setActiveTab('settings')}
+        >
+          <Ionicons name="settings" size={24} color={activeTab === 'settings' ? '#6a0dad' : '#666'} />
+          <Text style={[styles.tabText, activeTab === 'settings' && styles.activeTabText]}>Settings</Text>
+        </TouchableOpacity>
       </View>
-      {/* Footer Navigation - absolutely positioned and padded for safe area */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom, position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: 'white', borderTopWidth: 1, borderColor: '#e5e7eb', zIndex: 100 }]}> 
-        <TouchableOpacity onPress={() => setActiveTab('home')} style={[styles.footerBtn, activeTab === 'home' && styles.footerBtnActive]}>
-          <MaterialCommunityIcons name="home-variant" size={28} color={activeTab === 'home' ? '#2563eb' : '#888'} />
-          <Text style={[styles.footerLabel, activeTab === 'home' && { color: '#2563eb' }]}>Services</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setActiveTab('calendar')} style={[styles.footerBtn, activeTab === 'calendar' && styles.footerBtnActive]}>
-          <Ionicons name="calendar-outline" size={28} color={activeTab === 'calendar' ? '#6366f1' : '#888'} />
-          <Text style={[styles.footerLabel, activeTab === 'calendar' && { color: '#6366f1' }]}>Billets</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setActiveTab('analytics')} style={[styles.footerBtn, activeTab === 'analytics' && styles.footerBtnActive]}>
-          <MaterialCommunityIcons name="chart-bar" size={28} color={activeTab === 'analytics' ? '#22c55e' : '#888'} />
-          <Text style={[styles.footerLabel, activeTab === 'analytics' && { color: '#22c55e' }]}>Stats</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setActiveTab('settings')} style={[styles.footerBtn, activeTab === 'settings' && styles.footerBtnActive]}>
-          <Ionicons name="settings-outline" size={28} color={activeTab === 'settings' ? '#f59e42' : '#888'} />
-          <Text style={[styles.footerLabel, activeTab === 'settings' && { color: '#f59e42' }]}>Paramètres</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
-  card: { backgroundColor: 'white', borderRadius: 12, padding: 16, margin: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  title: { fontSize: 18, fontWeight: 'bold', color: '#222' },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 8 },
-  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  bold: { fontWeight: 'bold', color: '#222' },
-  active: { fontSize: 12, backgroundColor: '#bbf7d0', color: '#166534', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
-  buttonBlue: { backgroundColor: '#2563eb', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 8 },
-  buttonGreen: { backgroundColor: '#22c55e', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 8 },
-  buttonPurple: { backgroundColor: '#6366f1', padding: 12, borderRadius: 8, alignItems: 'center', marginTop: 12 },
-  input: { borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, padding: 10, marginBottom: 8, fontSize: 14, backgroundColor: '#f3f4f6' },
-  dropdown: { backgroundColor: 'white', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 8, marginBottom: 8 },
-  dropdownItem: { padding: 12 },
-  serviceCard: { backgroundColor: '#f3f4f6', borderRadius: 8, padding: 12, marginVertical: 6 },
-  iconBtn: { marginLeft: 8 },
-  header: { padding: 16, backgroundColor: 'white', borderBottomWidth: 1, borderColor: '#e5e7eb' },
-  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#222' },
-  footer: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', paddingVertical: 6, backgroundColor: 'white' },
-  footerBtn: { flex: 1, alignItems: 'center', paddingVertical: 4 },
-  footerBtnActive: { borderTopWidth: 2, borderColor: '#2563eb', backgroundColor: '#f3f4f6' },
-  footerLabel: { fontSize: 12, color: '#888', marginTop: 2 },
-  analyticsCard: { alignItems: 'center', flex: 1, backgroundColor: '#f3f4f6', borderRadius: 8, padding: 10, marginHorizontal: 2 },
-  analyticsValue: { fontWeight: 'bold', fontSize: 16, marginTop: 2 },
-  analyticsLabel: { fontSize: 12, color: '#666' },
-  orderCard: { backgroundColor: '#f9fafb', borderRadius: 8, padding: 10, marginVertical: 4 },
-  settingsBtn: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 8, backgroundColor: '#f3f4f6', marginBottom: 8 },
-  settingsBtnText: { marginLeft: 10, fontSize: 15, color: '#222' },
-  creditBtn: { backgroundColor: '#e0e7ff', padding: 10, borderRadius: 8, alignItems: 'center', flex: 1, marginHorizontal: 4 },
-  logoutBtn: { backgroundColor: '#fef2f2', padding: 14, borderRadius: 8, alignItems: 'center', margin: 16 },
+  mainContainer: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  profileCard: {
+    margin: 16,
+    borderRadius: 16,
+    overflow: 'hidden',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  profileGradient: {
+    padding: 20,
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  profileImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 3,
+    borderColor: '#fff',
+  },
+  profileInfo: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  profileName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  ratingStar: {
+    fontSize: 16,
+    marginRight: 4,
+  },
+  ratingText: {
+    fontSize: 14,
+    color: '#fff',
+  },
+  profileDescription: {
+    fontSize: 14,
+    color: '#fff',
+    opacity: 0.9,
+  },
+  viewProfileButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    padding: 12,
+    borderRadius: 25,
+    alignItems: 'center',
+  },
+  viewProfileText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  accountCard: {
+    margin: 16,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 16,
+  },
+  balanceContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  balanceItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  balanceDivider: {
+    width: 1,
+    backgroundColor: '#ddd',
+    marginHorizontal: 16,
+  },
+  balanceLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  balanceValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  addFundsButton: {
+    backgroundColor: '#4CAF50',
+    padding: 12,
+    borderRadius: 25,
+    alignItems: 'center',
+  },
+  addFundsText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  serviceCard: {
+    margin: 16,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  input: {
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    fontSize: 16,
+  },
+  categorySelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  categoryText: {
+    color: '#333',
+  },
+  placeholderText: {
+    color: '#666',
+  },
+  dropdown: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    marginTop: -8,
+    marginBottom: 12,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  dropdownItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  dropdownItemText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  addServiceButton: {
+    backgroundColor: '#6a0dad',
+    padding: 12,
+    borderRadius: 25,
+    alignItems: 'center',
+  },
+  addServiceText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  servicesCard: {
+    margin: 16,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  serviceItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  serviceTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  serviceDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+  },
+  serviceActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  actionButton: {
+    padding: 8,
+    marginLeft: 8,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    paddingTop: 8,
+  },
+  tabItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  activeTab: {
+    borderTopWidth: 2,
+    borderTopColor: '#6a0dad',
+  },
+  tabText: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+  },
+  activeTabText: {
+    color: '#6a0dad',
+    fontWeight: 'bold',
+  },
+  sectionCard: {
+    margin: 16,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 16,
+  },
+  eventCard: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 16,
+  },
+  eventHeader: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  eventDate: {
+    backgroundColor: '#6a0dad',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  eventDay: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  eventMonth: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  eventInfo: {
+    flex: 1,
+  },
+  eventTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  eventLocation: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 2,
+  },
+  eventTime: {
+    fontSize: 14,
+    color: '#666',
+  },
+  eventStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    paddingTop: 16,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#666',
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: '#eee',
+  },
+  ticketTypeCard: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  ticketTypeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  ticketTypeTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  ticketTypePrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#6a0dad',
+  },
+  ticketTypeStats: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  ticketStat: {
+    marginRight: 24,
+  },
+  ticketStatValue: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  ticketStatLabel: {
+    fontSize: 12,
+    color: '#666',
+  },
+  editTicketButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 8,
+    borderWidth: 1,
+    borderColor: '#6a0dad',
+    borderRadius: 8,
+  },
+  editTicketText: {
+    color: '#6a0dad',
+    marginLeft: 8,
+    fontWeight: '500',
+  },
+  createEventButton: {
+    backgroundColor: '#6a0dad',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  createEventText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 8,
+  },
+  statCard: {
+    width: '50%',
+    padding: 8,
+  },
+  statIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  chartContainer: {
+    flexDirection: 'row',
+    height: 200,
+    alignItems: 'flex-end',
+    paddingTop: 16,
+  },
+  chartBar: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  chartFill: {
+    width: 20,
+    backgroundColor: '#6a0dad',
+    borderRadius: 10,
+  },
+  chartLabel: {
+    marginTop: 8,
+    color: '#666',
+  },
+  popularEventCard: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  popularEventImage: {
+    width: '100%',
+    height: 150,
+  },
+  popularEventInfo: {
+    padding: 16,
+  },
+  popularEventTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  popularEventStats: {
+    fontSize: 14,
+    color: '#666',
+  },
+  settingItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  settingInfo: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  settingLabel: {
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 4,
+  },
+  settingDescription: {
+    fontSize: 14,
+    color: '#666',
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ff4444',
+    margin: 16,
+    padding: 16,
+    borderRadius: 12,
+  },
+  logoutText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
 });
 
 export default ArtistMobileApp;

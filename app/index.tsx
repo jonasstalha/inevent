@@ -8,8 +8,6 @@ import {
   Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import img from '@/assets/indexpage/mainpic.png'; // Make sure this path is correct
-import ClientAppScreen from './(client)'; // importing from app/(client)/index.tsx
 
 const { width, height } = Dimensions.get('window');
 
@@ -26,7 +24,11 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
-      <Image source={img} style={styles.heroImage} resizeMode="cover" />
+      <Image 
+        source={require('../assets/indexpage/mainpic.png')} 
+        style={styles.heroImage} 
+        resizeMode="cover" 
+      />
       <View style={styles.overlay} />
       <View style={styles.content}>
         <TouchableOpacity style={styles.button} onPress={handlePress}>
