@@ -5,8 +5,12 @@ import { MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-ico
 import { useArtistStore } from './ArtistStore';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
 
 const ArtistMobileApp = () => {
+  const insets = useSafeAreaInsets();
+  const router = useRouter();
+
   const {
     gigs,
     categories,
@@ -40,16 +44,56 @@ const ArtistMobileApp = () => {
     reviewsCount: 124
   };
 
-  const marketplaceCategories = categories.map(cat => cat.name);
+  // Replace with marketplace categories from client CategorySelector
+  const MARKETPLACE_CATEGORIES = [
+    'Mariage',
+    'Anniversaire',
+    'Traiteur',
+    'Musique',
+    'Neggafa',
+    'Conference',
+    "Evenement d'entreprise",
+    'Kermesse',
+    'Henna',
+    'Photographie',
+    'Animation',
+    'Decoration',
+    'Buffet',
+  ];
 
   const [newService, setNewService] = useState({
     title: '',
     description: '',
     basePrice: '',
+    minQuantity: '1',
+    maxQuantity: '10',
     category: '',
-    offers: [],
-    images: []
+    images: [] as string[],
+    addOns: [
+      { name: '', price: '', type: 'checkbox' },
+    ],
+    providerName: artistProfile.name,
+    providerAvatar: artistProfile.image,
+    rating: 0,
+    reviewCount: 0,
+    isAvailable: true,
+    location: '',
+    defaultMessage: '',
+    tags: '',
   });
+  const [serviceImages, setServiceImages] = useState<string[]>([]);
+  const [serviceOptions, setServiceOptions] = useState([
+    { title: '', price: '', description: '' }
+  ]);
+  const [serviceLocation, setServiceLocation] = useState('');
+  const [addOns, setAddOns] = useState([
+    { name: '', price: '', type: 'checkbox' },
+  ]);
+  const [isAvailable, setIsAvailable] = useState(true);
+  const [minQuantity, setMinQuantity] = useState('1');
+  const [maxQuantity, setMaxQuantity] = useState('10');
+  const [defaultMessage, setDefaultMessage] = useState('');
+  const [tags, setTags] = useState('');
 
   const [newEvent, setNewEvent] = useState({
     title: '',
@@ -59,8 +103,46 @@ const ArtistMobileApp = () => {
     flyer: null
   });
 
-  const insets = useSafeAreaInsets();
-  const router = useRouter();
+  // Image picker for service images
+  const pickServiceImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      quality: 0.7,
+    });
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      setServiceImages([...serviceImages, ...result.assets.map(a => a.uri)]);
+    }
+  };
+  const removeServiceImage = (uri: string) => {
+    setServiceImages(serviceImages.filter(img => img !== uri));
+  };
+
+  // Add/remove service options
+  const addServiceOption = () => {
+    setServiceOptions([...serviceOptions, { title: '', price: '', description: '' }]);
+  };
+  const removeServiceOption = (idx: number) => {
+    setServiceOptions(serviceOptions.filter((_, i) => i !== idx));
+  };
+  const updateServiceOption = (idx: number, field: 'title' | 'price' | 'description', value: string) => {
+    const updated = [...serviceOptions];
+    updated[idx][field] = value;
+    setServiceOptions(updated);
+  };
+
+  // Add/remove add-ons
+  const addAddOn = () => {
+    setAddOns([...addOns, { name: '', price: '', type: 'checkbox' }]);
+  };
+  const removeAddOn = (idx: number) => {
+    setAddOns(addOns.filter((_, i) => i !== idx));
+  };
+  const updateAddOn = (idx: number, field: 'name' | 'price' | 'type', value: string) => {
+    const updated = [...addOns];
+    updated[idx][field] = value;
+    setAddOns(updated);
+  };
 
   const addService = () => {
     if (credits < 5) {
@@ -68,22 +150,46 @@ const ArtistMobileApp = () => {
       return;
     }
     if (!selectedCategory || !newService.title || !newService.description || !newService.basePrice) return;
-    const categoryObj = categories.find(c => c.name === selectedCategory.name);
     addGig({
       title: newService.title,
       description: newService.description,
-      categoryId: categoryObj ? categoryObj.id : '',
-      tickets: [],
+      category: selectedCategory.name, // Use category name as string
+      basePrice: Number(newService.basePrice),
+      images: serviceImages,
+      options: serviceOptions.map(opt => ({
+        id: Date.now().toString() + Math.random(),
+        title: opt.title,
+        price: Number(opt.price),
+        description: opt.description,
+      })),
+      location: serviceLocation,
+      rating: 0,
+      reviewCount: 0,
+      createdAt: new Date(),
+      artistId: '1', // TODO: Replace with actual artistId from context/auth
     });
     setCredits(credits - 5);
     setNewService({
       title: '',
       description: '',
       basePrice: '',
+      minQuantity: '1',
+      maxQuantity: '10',
       category: '',
-      offers: [],
-      images: []
+      images: [],
+      addOns: [{ name: '', price: '', type: 'checkbox' }],
+      providerName: artistProfile.name,
+      providerAvatar: artistProfile.image,
+      rating: 0,
+      reviewCount: 0,
+      isAvailable: true,
+      location: '',
+      defaultMessage: '',
+      tags: '',
     });
+    setServiceImages([]);
+    setServiceOptions([{ title: '', price: '', description: '' }]);
+    setServiceLocation('');
     setSelectedCategory(null);
   };
 
@@ -96,13 +202,15 @@ const ArtistMobileApp = () => {
     addGig({
       title: newEvent.title,
       description: newEvent.description,
-      categoryId: categories[0]?.id || '',
-      tickets: newEvent.ticketTypes.map((t, i) => ({
-        id: `${Date.now()}-${i}`,
-        name: t.name,
-        price: Number(t.price),
-        quantity: Number(t.quantity)
-      })),
+      category: categories[0]?.name || '', // Use category name as string
+      basePrice: 0,
+      images: [],
+      options: [],
+      location: '',
+      rating: 0,
+      reviewCount: 0,
+      createdAt: new Date(),
+      artistId: '1', // TODO: Replace with actual artistId from context/auth
     });
     setCredits(credits - 10);
     setNewEvent({
@@ -188,49 +296,163 @@ const ArtistMobileApp = () => {
           style={styles.input}
           placeholderTextColor="#666"
         />
-        <TouchableOpacity 
-          onPress={() => setShowCategoryDropdown(!showCategoryDropdown)} 
-          style={[styles.input, styles.categorySelector]}
-        >
-          <Text style={selectedCategory ? styles.categoryText : styles.placeholderText}>
-            {selectedCategory?.name || 'Select Category'}
-          </Text>
-          <Ionicons name="chevron-down" size={20} color="#666" />
-        </TouchableOpacity>
-        {showCategoryDropdown && (
-          <View style={styles.dropdown}>
-            {marketplaceCategories.map(cat => (
-              <TouchableOpacity 
-                key={cat} 
-                onPress={() => {
-                  setSelectedCategory({ type: 'marketplace', name: cat });
-                  setShowCategoryDropdown(false);
-                }}
-                style={styles.dropdownItem}
-              >
-                <Text style={styles.dropdownItemText}>{cat}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-        <TextInput 
-          placeholder="Base Price" 
-          value={newService.basePrice}
-          onChangeText={text => setNewService({ ...newService, basePrice: text })}
-          style={styles.input}
-          keyboardType="numeric"
-          placeholderTextColor="#666"
-        />
-        <TextInput 
-          placeholder="Service Description" 
+        <TextInput
+          placeholder="Description"
           value={newService.description}
           onChangeText={text => setNewService({ ...newService, description: text })}
           style={[styles.input, styles.textArea]}
           multiline
           placeholderTextColor="#666"
         />
+        {/* Service Images */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+          {serviceImages.map((img, idx) => (
+            <View key={img} style={{ marginRight: 8, position: 'relative' }}>
+              <Image source={{ uri: img }} style={{ width: 60, height: 60, borderRadius: 8 }} />
+              <TouchableOpacity onPress={() => removeServiceImage(img)} style={{ position: 'absolute', top: -8, right: -8, backgroundColor: '#fff', borderRadius: 12, padding: 2 }}>
+                <Ionicons name="close" size={16} color="#6a0dad" />
+              </TouchableOpacity>
+            </View>
+          ))}
+          <TouchableOpacity onPress={pickServiceImage} style={{ width: 60, height: 60, borderRadius: 8, backgroundColor: '#f0f0f5', alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="add" size={28} color="#6a0dad" />
+          </TouchableOpacity>
+        </ScrollView>
+        <TextInput
+          placeholder="Base Price"
+          value={newService.basePrice}
+          onChangeText={text => setNewService({ ...newService, basePrice: text.replace(/[^0-9]/g, '') })}
+          style={styles.input}
+          keyboardType="numeric"
+          placeholderTextColor="#666"
+        />
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TextInput
+            placeholder="Min Quantity"
+            value={minQuantity}
+            onChangeText={setMinQuantity}
+            style={[styles.input, { flex: 1 }]}
+            keyboardType="numeric"
+            placeholderTextColor="#666"
+          />
+          <TextInput
+            placeholder="Max Quantity"
+            value={maxQuantity}
+            onChangeText={setMaxQuantity}
+            style={[styles.input, { flex: 1 }]}
+            keyboardType="numeric"
+            placeholderTextColor="#666"
+          />
+        </View>
+        {/* Service Options/Items */}
+        <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Service Items/Options</Text>
+        {serviceOptions.map((opt, idx) => (
+          <View key={idx} style={{ marginBottom: 8, backgroundColor: '#f9f9f9', borderRadius: 8, padding: 8 }}>
+            <TextInput
+              placeholder="Item Title"
+              value={opt.title}
+              onChangeText={v => updateServiceOption(idx, 'title', v)}
+              style={styles.input}
+              placeholderTextColor="#666"
+            />
+            <TextInput
+              placeholder="Price"
+              value={opt.price}
+              onChangeText={v => updateServiceOption(idx, 'price', v.replace(/[^0-9]/g, ''))}
+              style={styles.input}
+              keyboardType="numeric"
+              placeholderTextColor="#666"
+            />
+            <TextInput
+              placeholder="Description"
+              value={opt.description}
+              onChangeText={v => updateServiceOption(idx, 'description', v)}
+              style={styles.input}
+              placeholderTextColor="#666"
+            />
+            {serviceOptions.length > 1 && (
+              <TouchableOpacity onPress={() => removeServiceOption(idx)} style={{ alignSelf: 'flex-end', marginTop: -8 }}>
+                <Ionicons name="trash" size={18} color="#ff4444" />
+              </TouchableOpacity>
+            )}
+          </View>
+        ))}
+        <TouchableOpacity onPress={addServiceOption} style={{ marginBottom: 12 }}>
+          <Text style={{ color: '#6a0dad', fontWeight: 'bold' }}>+ Add Item/Option</Text>
+        </TouchableOpacity>
+        {/* Add-ons/Extras */}
+        <Text style={{ fontWeight: 'bold', marginBottom: 4, marginTop: 8 }}>Add-ons / Extras</Text>
+        {addOns.map((addon, idx) => (
+          <View key={idx} style={{ marginBottom: 8, backgroundColor: '#f9f9f9', borderRadius: 8, padding: 8 }}>
+            <TextInput
+              placeholder="Add-on Name"
+              value={addon.name}
+              onChangeText={v => updateAddOn(idx, 'name', v)}
+              style={styles.input}
+              placeholderTextColor="#666"
+            />
+            <TextInput
+              placeholder="Price"
+              value={addon.price}
+              onChangeText={v => updateAddOn(idx, 'price', v.replace(/[^0-9]/g, ''))}
+              style={styles.input}
+              keyboardType="numeric"
+              placeholderTextColor="#666"
+            />
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+              <Text style={{ marginRight: 8 }}>Type:</Text>
+              <TouchableOpacity onPress={() => updateAddOn(idx, 'type', 'checkbox')} style={{ marginRight: 8 }}>
+                <Text style={{ color: addon.type === 'checkbox' ? '#6a0dad' : '#666' }}>Checkbox</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => updateAddOn(idx, 'type', 'counter')}>
+                <Text style={{ color: addon.type === 'counter' ? '#6a0dad' : '#666' }}>Counter</Text>
+              </TouchableOpacity>
+            </View>
+            {addOns.length > 1 && (
+              <TouchableOpacity onPress={() => removeAddOn(idx)} style={{ alignSelf: 'flex-end', marginTop: -8 }}>
+                <Ionicons name="trash" size={18} color="#ff4444" />
+              </TouchableOpacity>
+            )}
+          </View>
+        ))}
+        <TouchableOpacity onPress={addAddOn} style={{ marginBottom: 12 }}>
+          <Text style={{ color: '#6a0dad', fontWeight: 'bold' }}>+ Add Add-on/Extra</Text>
+        </TouchableOpacity>
+        {/* Provider Info (auto-filled) */}
+        <Text style={{ color: '#888', fontSize: 13, marginBottom: 4 }}>Provider: {artistProfile.name}</Text>
+        {/* Category/Tags */}
+        <TextInput
+          placeholder="Tags (comma separated)"
+          value={tags}
+          onChangeText={setTags}
+          style={styles.input}
+          placeholderTextColor="#666"
+        />
+        {/* Is Available in Marketplace */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+          <Text style={{ marginRight: 8 }}>Available in Marketplace</Text>
+          <TouchableOpacity onPress={() => setIsAvailable(v => !v)} style={{ marginRight: 8 }}>
+            <Ionicons name={isAvailable ? 'checkbox' : 'square-outline'} size={22} color={isAvailable ? '#6a0dad' : '#666'} />
+          </TouchableOpacity>
+        </View>
+        {/* Location/Store */}
+        <TextInput
+          placeholder="Store Location (address or city)"
+          value={serviceLocation}
+          onChangeText={setServiceLocation}
+          style={styles.input}
+          placeholderTextColor="#666"
+        />
+        {/* Default Message/Instructions */}
+        <TextInput
+          placeholder="Default Message/Instructions for Custom Offers (optional)"
+          value={defaultMessage}
+          onChangeText={setDefaultMessage}
+          style={styles.input}
+          placeholderTextColor="#666"
+        />
         <TouchableOpacity onPress={addService} style={styles.addServiceButton}>
-          <Text style={styles.addServiceText}>➕ Add Service</Text>
+          <Text style={styles.addServiceText}>➕ Add Service <Text style={{color:'#ff4444', fontWeight:'bold'}}>(-5 credits)</Text></Text>
         </TouchableOpacity>
       </View>
 
@@ -344,7 +566,7 @@ const ArtistMobileApp = () => {
           placeholderTextColor="#666"
         />
         <TouchableOpacity style={styles.createEventButton}>
-          <Text style={styles.createEventText}>Create Event</Text>
+          <Text style={styles.createEventText}>Create Event <Text style={{color:'#ff4444', fontWeight:'bold'}}>(-10 credits)</Text></Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

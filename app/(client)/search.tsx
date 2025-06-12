@@ -35,6 +35,7 @@ export default function SearchScreen() {
   const [filteredArtists, setFilteredArtists] = useState<Artist[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const debouncedSetSearchQuery = useCallback(
@@ -45,6 +46,7 @@ export default function SearchScreen() {
   useEffect(() => {
     // Initialize from URL params
     if (params.query) {
+      setSearchInput(params.query as string);
       setSearchQuery(params.query as string);
     }
 
@@ -104,18 +106,15 @@ export default function SearchScreen() {
   };
 
   const handleSearch = () => {
-    // Update URL for sharing/history purposes
-    const queryParams = new URLSearchParams();
-    if (searchQuery) queryParams.append('query', searchQuery);
-    if (selectedCategory !== 'All') queryParams.append('category', selectedCategory);
-
+    setSearchQuery(searchInput);
     router.setParams({
-      query: searchQuery,
+      query: searchInput,
       category: selectedCategory !== 'All' ? selectedCategory : undefined,
     });
   };
 
   const clearSearch = () => {
+    setSearchInput('');
     setSearchQuery('');
     router.setParams({
       query: undefined,
@@ -154,10 +153,8 @@ export default function SearchScreen() {
             style={styles.searchInput}
             placeholder="Search for artists, services..."
             placeholderTextColor={Theme.colors.textLight}
-            value={searchQuery}
-            onChangeText={(text) => {
-              debouncedSetSearchQuery(text);
-            }}
+            value={searchInput}
+            onChangeText={setSearchInput}
             onSubmitEditing={handleSearch}
             returnKeyType="search"
           />

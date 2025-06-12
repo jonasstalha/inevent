@@ -1,515 +1,280 @@
+// NOTE: This is a simplified React Native version of the original component focusing on UI and logic
+// This does not include navigation or backend integration
+
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, TextInput, Alert } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { View, Text, Image, ScrollView, TouchableOpacity, TextInput, Modal, StyleSheet, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-export default function GigDetail() {
-  const { gigId } = useLocalSearchParams();
-  
-  // Sample gig data - in real app, fetch based on gigId
+export default function GigDetailScreen() {
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [serviceQuantities, setServiceQuantities] = useState({ logoDesign: 1 });
+  const [extras, setExtras] = useState({ urgentDelivery: false, extraRevisions: 0, sourceFiles: false });
+  const [customMessage, setCustomMessage] = useState('');
+  const [showOfferForm, setShowOfferForm] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewText, setReviewText] = useState('');
+  const [reviews, setReviews] = useState([
+    { user: 'Alex', text: 'Great work and fast delivery!', rating: 5 },
+    { user: 'Jamie', text: 'Very professional and creative.', rating: 4 }
+  ]);
+  const [saved, setSaved] = useState(false);
+
   const gigData = {
-    id: gigId || '1',
-    title: 'Professional Logo Design',
-    provider: 'Sarah Design Studio',
-    rating: 4.9,
-    reviews: 127,
-    bannerImage: 'https://via.placeholder.com/400x200/4A90E2/FFFFFF?text=Logo+Design+Service',
-    price: 50,
-    originalPrice: 80,
-    description: 'Get a professional, unique logo design that represents your brand perfectly. I will create modern, memorable logos with unlimited revisions until you\'re 100% satisfied.',
-    features: [
-      'Unlimited revisions',
-      '3 initial concepts',
-      'High-resolution files',
-      'Commercial license',
-      '24-hour delivery option'
+    title: 'Professional Logo Design with Unlimited Revisions',
+    description: 'Get a unique, professional logo tailored to your brand. Unlimited revisions, fast delivery, and source files included. Perfect for startups, businesses, and personal brands.',
+    images: [
+      'https://images.unsplash.com/photo-1626785774573-4b799315345d?w=600&h=400&fit=crop',
+      'https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=600&h=400&fit=crop'
     ],
-    deliveryTime: '3-7 days',
-    category: 'Design & Creative'
+    provider: {
+      name: 'Sarah Design Studio',
+      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face'
+    },
+    basePrice: 45,
+    rating: 4.8,
+    reviewCount: 22
   };
 
-  const [selectedPackage, setSelectedPackage] = useState('basic');
-  const [customRequirements, setCustomRequirements] = useState('');
-  const [deliveryLocation, setDeliveryLocation] = useState('');
-  const [urgentDelivery, setUrgentDelivery] = useState(false);
-  const [quantity, setQuantity] = useState(1);
-
-  const packages = {
-    basic: { name: 'Basic', price: 50, delivery: '7 days', revisions: 3 },
-    standard: { name: 'Standard', price: 100, delivery: '5 days', revisions: 5 },
-    premium: { name: 'Premium', price: 150, delivery: '3 days', revisions: 'Unlimited' }
+  const services = {
+    logoDesign: { name: 'Logo Design', basePrice: 45, min: 1, max: 10 }
   };
 
-  const calculateTotal = () => {
-    let total = packages[selectedPackage].price * quantity;
-    if (urgentDelivery) total += 20;
+  const extraServices = {
+    urgentDelivery: { name: '24-hour delivery', price: 25 },
+    extraRevisions: { name: 'Extra revision', price: 10 },
+    sourceFiles: { name: 'Source files', price: 15 }
+  };
+
+  const handleServiceChange = (change: number) => {
+    setServiceQuantities((prev) => {
+      const newQty = Math.max(services.logoDesign.min, Math.min(services.logoDesign.max, prev.logoDesign + change));
+      return { logoDesign: newQty };
+    });
+  };
+
+  const calculatePrice = () => {
+    let total = services.logoDesign.basePrice * serviceQuantities.logoDesign;
+    if (extras.urgentDelivery) total += extraServices.urgentDelivery.price;
+    if (extras.extraRevisions > 0) total += extras.extraRevisions * extraServices.extraRevisions.price;
+    if (extras.sourceFiles) total += extraServices.sourceFiles.price;
     return total;
   };
 
-  const handleOrderRequest = () => {
-    const orderDetails = {
-      gigId: gigData.id,
-      package: selectedPackage,
-      quantity,
-      customRequirements,
-      deliveryLocation,
-      urgentDelivery,
-      total: calculateTotal()
-    };
-    
-    Alert.alert(
-      'Order Request Sent!',
-      `Your request for ${gigData.title} has been sent to ${gigData.provider}. They will contact you soon with a custom quote.`,
-      [{ text: 'OK' }]
-    );
+  const handleSendOffer = () => {
+    Alert.alert('Offer Sent', `Offer sent to ${gigData.provider.name}! Total: $${calculatePrice()}`);
+    setShowOfferForm(false);
   };
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Banner Image */}
-      <View style={styles.bannerContainer}>
-        <Image source={{ uri: gigData.bannerImage }} style={styles.bannerImage} />
-        <View style={styles.discountBadge}>
-          <Text style={styles.discountText}>37% OFF</Text>
-        </View>
-      </View>
-
-      {/* Header Info */}
-      <View style={styles.headerContainer}>
-        <Text style={styles.title}>{gigData.title}</Text>
-        <Text style={styles.provider}>by {gigData.provider}</Text>
-        <View style={styles.ratingContainer}>
-          <Text style={styles.rating}>⭐ {gigData.rating}</Text>
-          <Text style={styles.reviews}>({gigData.reviews} reviews)</Text>
-          <Text style={styles.category}> • {gigData.category}</Text>
-        </View>
-      </View>
-
-      {/* Pricing Section */}
-      <View style={styles.pricingContainer}>
-        <View style={styles.priceRow}>
-          <Text style={styles.currentPrice}>${gigData.price}</Text>
-          <Text style={styles.originalPrice}>${gigData.originalPrice}</Text>
-        </View>
-        <Text style={styles.deliveryTime}>⏱️ Delivery: {gigData.deliveryTime}</Text>
-      </View>
-
-      {/* Description */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Description</Text>
-        <Text style={styles.description}>{gigData.description}</Text>
-      </View>
-
-      {/* Features */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>What's Included</Text>
-        {gigData.features.map((feature, index) => (
-          <View key={index} style={styles.featureRow}>
-            <Text style={styles.checkmark}>✓</Text>
-            <Text style={styles.featureText}>{feature}</Text>
+    <View style={{ flex: 1, backgroundColor: '#f6f8fa' }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 0 }}>
+        <View style={[styles.card, { marginTop: 12, marginBottom: 24, paddingBottom: 24 }]}> 
+          {/* Image Gallery */}
+          <View style={{ alignItems: 'center' }}>
+            <Image source={{ uri: gigData.images[selectedImage] }} style={styles.mainImage} />
+            <View style={styles.galleryRow}>
+              {gigData.images.map((img, index) => (
+                <TouchableOpacity key={index} onPress={() => setSelectedImage(index)}>
+                  <Image
+                    source={{ uri: img }}
+                    style={[
+                      styles.thumbnail,
+                      selectedImage === index && styles.thumbnailSelected
+                    ]}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
-        ))}
-      </View>
-
-      {/* Package Selection */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Choose Your Package</Text>
-        <View style={styles.packageContainer}>
-          {Object.entries(packages).map(([key, pkg]) => (
-            <TouchableOpacity
-              key={key}
-              style={[
-                styles.packageOption,
-                selectedPackage === key && styles.selectedPackage
-              ]}
-              onPress={() => setSelectedPackage(key)}
-            >
-              <Text style={styles.packageName}>{pkg.name}</Text>
-              <Text style={styles.packagePrice}>${pkg.price}</Text>
-              <Text style={styles.packageDetails}>
-                {pkg.delivery} • {pkg.revisions} revisions
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* Customization Section */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Customize Your Order</Text>
-        
-        {/* Quantity */}
-        <View style={styles.customizeRow}>
-          <Text style={styles.customizeLabel}>Quantity:</Text>
-          <View style={styles.quantityContainer}>
-            <TouchableOpacity
-              style={styles.quantityButton}
-              onPress={() => setQuantity(Math.max(1, quantity - 1))}
-            >
-              <Text style={styles.quantityButtonText}>-</Text>
-            </TouchableOpacity>
-            <Text style={styles.quantityText}>{quantity}</Text>
-            <TouchableOpacity
-              style={styles.quantityButton}
-              onPress={() => setQuantity(quantity + 1)}
-            >
-              <Text style={styles.quantityButtonText}>+</Text>
+          {/* Title & Save */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2, marginTop: 8 }}>
+            <Text style={styles.title}>{gigData.title}</Text>
+            <TouchableOpacity onPress={() => setSaved(s => !s)}>
+              <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={28} color={saved ? '#2563eb' : '#bbb'} />
             </TouchableOpacity>
           </View>
-        </View>
-
-        {/* Custom Requirements */}
-        <View style={styles.customizeRow}>
-          <Text style={styles.customizeLabel}>Special Requirements:</Text>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Describe your specific needs, preferences, style requirements..."
-            value={customRequirements}
-            onChangeText={setCustomRequirements}
-            multiline
-            numberOfLines={4}
-          />
-        </View>
-
-        {/* Delivery Location */}
-        <View style={styles.customizeRow}>
-          <Text style={styles.customizeLabel}>Delivery Method:</Text>
-          <TextInput
-            style={styles.textInput}
-            placeholder="Email, cloud storage, physical address..."
-            value={deliveryLocation}
-            onChangeText={setDeliveryLocation}
-          />
-        </View>
-
-        {/* Urgent Delivery */}
-        <TouchableOpacity
-          style={styles.checkboxRow}
-          onPress={() => setUrgentDelivery(!urgentDelivery)}
-        >
-          <View style={[styles.checkbox, urgentDelivery && styles.checkedBox]}>
-            {urgentDelivery && <Text style={styles.checkmark}>✓</Text>}
+          {/* Provider & Rating */}
+          <View style={[styles.providerRow, { marginBottom: 0, marginTop: 0 }]}> 
+            <Image source={{ uri: gigData.provider.avatar }} style={styles.avatar} />
+            <Text style={styles.provider}>{gigData.provider.name}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 10 }}>
+              <Ionicons name="star" size={17} color="#fbbf24" />
+              <Text style={{ marginLeft: 2, color: '#444', fontWeight: '500', fontSize: 15 }}>{gigData.rating} ({gigData.reviewCount})</Text>
+            </View>
           </View>
-          <View style={styles.checkboxContent}>
-            <Text style={styles.checkboxLabel}>Urgent Delivery (+$20)</Text>
-            <Text style={styles.checkboxSubtext}>Get your order 2x faster</Text>
+          {/* Description */}
+          <Text style={styles.description}>{gigData.description}</Text>
+          {/* General Price */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, marginBottom: 8 }}>
+            <Ionicons name="pricetag" size={19} color="#2563eb" />
+            <Text style={{ fontSize: 17, fontWeight: 'bold', marginLeft: 6, color: '#2563eb' }}>${gigData.basePrice} base price</Text>
           </View>
+          {/* Customise Order Section */}
+          <View style={[styles.section, { marginTop: 18, backgroundColor: '#f8fafc', borderRadius: 12, padding: 12, marginBottom: 8 }]}> 
+            <Text style={[styles.sectionTitle, { marginBottom: 8 }]}>Customise your order</Text>
+            <View style={[styles.counterContainer, { backgroundColor: '#e0e7ef', borderRadius: 8, padding: 8, marginBottom: 8 }]}> 
+              <TouchableOpacity onPress={() => handleServiceChange(-1)} disabled={serviceQuantities.logoDesign <= services.logoDesign.min}>
+                <Ionicons name="remove-circle-outline" size={30} color={serviceQuantities.logoDesign <= services.logoDesign.min ? '#d1d5db' : '#2563eb'} />
+              </TouchableOpacity>
+              <Text style={[styles.counter, { fontSize: 20 }]}>{serviceQuantities.logoDesign}</Text>
+              <TouchableOpacity onPress={() => handleServiceChange(1)} disabled={serviceQuantities.logoDesign >= services.logoDesign.max}>
+                <Ionicons name="add-circle-outline" size={30} color={serviceQuantities.logoDesign >= services.logoDesign.max ? '#d1d5db' : '#2563eb'} />
+              </TouchableOpacity>
+              <Text style={[styles.priceText, { fontWeight: 'bold', fontSize: 16 }]}>x ${services.logoDesign.basePrice} each</Text>
+            </View>
+            <Text style={{ color: '#888', fontSize: 13, marginBottom: 8, marginTop: 0 }}>Choose quantity (like food order)</Text>
+            <Text style={[styles.sectionTitle, { marginBottom: 6 }]}>Add-ons</Text>
+            <TouchableOpacity style={[styles.addonRow, { backgroundColor: extras.urgentDelivery ? '#e0e7ff' : 'transparent', borderRadius: 6, marginBottom: 4 }]} onPress={() => setExtras(prev => ({ ...prev, urgentDelivery: !prev.urgentDelivery }))}>
+              <Ionicons name={extras.urgentDelivery ? 'checkbox' : 'square-outline'} size={21} color={extras.urgentDelivery ? '#2563eb' : '#888'} />
+              <Text style={styles.addonText}>{extraServices.urgentDelivery.name} (+${extraServices.urgentDelivery.price})</Text>
+            </TouchableOpacity>
+            <View style={[styles.counterContainer, { backgroundColor: '#e0e7ef', borderRadius: 8, padding: 8, marginTop: 0, marginBottom: 4 }]}> 
+              <TouchableOpacity onPress={() => setExtras(prev => ({ ...prev, extraRevisions: Math.max(0, prev.extraRevisions - 1) }))}>
+                <Ionicons name="remove-circle-outline" size={21} color={extras.extraRevisions === 0 ? '#d1d5db' : '#2563eb'} />
+              </TouchableOpacity>
+              <Text style={styles.counter}>{extras.extraRevisions}</Text>
+              <TouchableOpacity onPress={() => setExtras(prev => ({ ...prev, extraRevisions: prev.extraRevisions + 1 }))}>
+                <Ionicons name="add-circle-outline" size={21} color={'#2563eb'} />
+              </TouchableOpacity>
+              <Text style={styles.priceText}>+${extraServices.extraRevisions.price} each</Text>
+            </View>
+            <TouchableOpacity style={[styles.addonRow, { backgroundColor: extras.sourceFiles ? '#e0e7ff' : 'transparent', borderRadius: 6 }]} onPress={() => setExtras(prev => ({ ...prev, sourceFiles: !prev.sourceFiles }))}>
+              <Ionicons name={extras.sourceFiles ? 'checkbox' : 'square-outline'} size={21} color={extras.sourceFiles ? '#2563eb' : '#888'} />
+              <Text style={styles.addonText}>{extraServices.sourceFiles.name} (+${extraServices.sourceFiles.price})</Text>
+            </TouchableOpacity>
+          </View>
+          {/* Send Offer Section */}
+          <View style={[styles.section, { marginTop: 0, marginBottom: 8 }]}> 
+            <Text style={styles.sectionTitle}>Send Offer to Provider</Text>
+            <TouchableOpacity style={styles.sendOfferBtn} onPress={() => setShowOfferForm(true)}>
+              <Ionicons name="mail" size={19} color="white" />
+              <Text style={styles.sendOfferBtnText}>Send Custom Offer</Text>
+            </TouchableOpacity>
+          </View>
+          {/* Reviews Section */}
+          <View style={[styles.section, { marginTop: 0 }]}> 
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+              <Text style={styles.sectionTitle}>Reviews</Text>
+              <TouchableOpacity onPress={() => setShowReviewForm(true)} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#e0e7ff', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 }}>
+                <Ionicons name="add-circle" size={22} color="#2563eb" />
+                <Text style={{ color: '#2563eb', fontWeight: '500', fontSize: 14, marginLeft: 2 }}>Add Review</Text>
+              </TouchableOpacity>
+            </View>
+            {reviews.length === 0 && <Text style={{ color: '#888', marginTop: 8 }}>No reviews yet.</Text>}
+            {reviews.map((r, i) => (
+              <View key={i} style={styles.reviewCard}>
+                <Text style={{ fontWeight: 'bold', color: '#222' }}>{r.user}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 2 }}>
+                  {[...Array(r.rating)].map((_, idx) => (
+                    <Ionicons key={idx} name="star" size={15} color="#fbbf24" />
+                  ))}
+                </View>
+                <Text style={{ color: '#444' }}>{r.text}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </ScrollView>
+      {/* Sticky Price Bar */}
+      <View style={[styles.stickyBar, { borderTopLeftRadius: 16, borderTopRightRadius: 16, shadowOpacity: 0.12 }]}> 
+        <View style={{ flex: 1, alignItems: 'flex-start' }}>
+          <Text style={styles.stickyTotal}>Total: ${calculatePrice()}</Text>
+        </View>
+        <TouchableOpacity style={styles.stickyButton} onPress={() => setShowOfferForm(true)}>
+          <Text style={styles.stickyButtonText}>Continue (${calculatePrice()})</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Order Summary */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Order Summary</Text>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>
-            {packages[selectedPackage].name} Package x {quantity}
-          </Text>
-          <Text style={styles.summaryPrice}>
-            ${packages[selectedPackage].price * quantity}
-          </Text>
-        </View>
-        {urgentDelivery && (
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Urgent Delivery</Text>
-            <Text style={styles.summaryPrice}>$20</Text>
+      {/* Offer Modal */}
+      <Modal visible={showOfferForm} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Send Custom Offer</Text>
+            <TextInput
+              multiline
+              numberOfLines={4}
+              placeholder="Describe your project..."
+              value={customMessage}
+              onChangeText={setCustomMessage}
+              style={styles.textArea}
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity onPress={() => setShowOfferForm(false)} style={styles.modalCancel}>
+                <Text>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleSendOffer} style={styles.modalSend}>
+                <Text style={{ color: 'white' }}>Send</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        )}
-        <View style={[styles.summaryRow, styles.totalRow]}>
-          <Text style={styles.totalLabel}>Total</Text>
-          <Text style={styles.totalPrice}>${calculateTotal()}</Text>
         </View>
-      </View>
-
-      {/* Order Button */}
-      <View style={styles.orderButtonContainer}>
-        <TouchableOpacity style={styles.orderButton} onPress={handleOrderRequest}>
-          <Text style={styles.orderButtonText}>Request Custom Quote</Text>
-        </TouchableOpacity>
-        <Text style={styles.orderNote}>
-          The seller will contact you with a personalized offer
-        </Text>
-      </View>
-    </ScrollView>
+      </Modal>
+      {/* Review Modal */}
+      <Modal visible={showReviewForm} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add a Review</Text>
+            <TextInput
+              multiline
+              numberOfLines={3}
+              placeholder="Write your review..."
+              value={reviewText}
+              onChangeText={setReviewText}
+              style={styles.textArea}
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity onPress={() => setShowReviewForm(false)} style={styles.modalCancel}>
+                <Text>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  setReviews(r => [...r, { user: 'You', text: reviewText, rating: 5 }]);
+                  setReviewText('');
+                  setShowReviewForm(false);
+                }}
+                style={styles.modalSend}
+                disabled={!reviewText.trim()}
+              >
+                <Text style={{ color: 'white' }}>Submit</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  bannerContainer: {
-    position: 'relative',
-  },
-  bannerImage: {
-    width: '100%',
-    height: 200,
-    resizeMode: 'cover',
-  },
-  discountBadge: {
-    position: 'absolute',
-    top: 15,
-    right: 15,
-    backgroundColor: '#FF6B6B',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
-  },
-  discountText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 12,
-  },
-  headerContainer: {
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
-  },
-  provider: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 8,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rating: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  reviews: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 5,
-  },
-  category: {
-    fontSize: 14,
-    color: '#4A90E2',
-  },
-  pricingContainer: {
-    padding: 20,
-    backgroundColor: '#f8f9fa',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 5,
-  },
-  currentPrice: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#4A90E2',
-  },
-  originalPrice: {
-    fontSize: 18,
-    color: '#999',
-    textDecorationLine: 'line-through',
-    marginLeft: 10,
-  },
-  deliveryTime: {
-    fontSize: 14,
-    color: '#666',
-  },
-  section: {
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 15,
-  },
-  description: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: '#666',
-  },
-  featureRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  checkmark: {
-    color: '#4CAF50',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginRight: 10,
-  },
-  featureText: {
-    fontSize: 15,
-    color: '#666',
-    flex: 1,
-  },
-  packageContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  packageOption: {
-    flex: 1,
-    padding: 15,
-    margin: 5,
-    borderWidth: 2,
-    borderColor: '#e0e0e0',
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  selectedPackage: {
-    borderColor: '#4A90E2',
-    backgroundColor: '#f0f7ff',
-  },
-  packageName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
-  },
-  packagePrice: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#4A90E2',
-    marginBottom: 5,
-  },
-  packageDetails: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-  },
-  customizeRow: {
-    marginBottom: 20,
-  },
-  customizeLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-  },
-  quantityContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  quantityButton: {
-    width: 40,
-    height: 40,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-  },
-  quantityButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  quantityText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginHorizontal: 20,
-    color: '#333',
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 15,
-    backgroundColor: '#f8f9fa',
-    textAlignVertical: 'top',
-  },
-  checkboxRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderWidth: 2,
-    borderColor: '#ddd',
-    borderRadius: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  checkedBox: {
-    borderColor: '#4A90E2',
-    backgroundColor: '#4A90E2',
-  },
-  checkboxContent: {
-    flex: 1,
-  },
-  checkboxLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  checkboxSubtext: {
-    fontSize: 14,
-    color: '#666',
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  summaryLabel: {
-    fontSize: 15,
-    color: '#666',
-  },
-  summaryPrice: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#333',
-  },
-  totalRow: {
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    marginTop: 10,
-    paddingTop: 15,
-  },
-  totalLabel: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  totalPrice: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#4A90E2',
-  },
-  orderButtonContainer: {
-    padding: 20,
-    backgroundColor: '#fff',
-  },
-  orderButton: {
-    backgroundColor: '#4A90E2',
-    paddingVertical: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  orderButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  orderNote: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
+  container: { flex: 1, backgroundColor: 'white', padding: 16 },
+  card: { backgroundColor: 'white', borderRadius: 16, margin: 0, marginTop: 0, marginBottom: 16, padding: 16, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
+  mainImage: { width: '100%', height: 220, borderRadius: 12, marginBottom: 8 },
+  galleryRow: { flexDirection: 'row', marginBottom: 8, justifyContent: 'center' },
+  thumbnail: { width: 54, height: 54, marginHorizontal: 4, borderRadius: 8, borderWidth: 2, borderColor: 'transparent' },
+  thumbnailSelected: { borderColor: '#2563eb', borderWidth: 2 },
+  title: { fontSize: 22, fontWeight: 'bold', marginTop: 4, marginBottom: 2, color: '#222' },
+  providerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, marginTop: 2 },
+  avatar: { width: 32, height: 32, borderRadius: 16, marginRight: 8 },
+  provider: { fontSize: 15, color: '#555', fontWeight: '500' },
+  description: { fontSize: 15, color: '#444', marginBottom: 8, marginTop: 2 },
+  section: { marginTop: 18 },
+  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 4, color: '#222' },
+  counterContainer: { flexDirection: 'row', alignItems: 'center', gap: 8, marginVertical: 8 },
+  counter: { marginHorizontal: 12, fontSize: 16, minWidth: 24, textAlign: 'center' },
+  priceText: { fontSize: 14, color: '#444', marginLeft: 8 },
+  addonRow: { flexDirection: 'row', alignItems: 'center', marginVertical: 6 },
+  addonText: { marginLeft: 8, fontSize: 15, color: '#333' },
+  stickyBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'white', padding: 12, borderTopWidth: 1, borderColor: '#eee', position: 'absolute', bottom: 0, left: 0, right: 0, elevation: 10, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8 },
+  stickyTotal: { fontSize: 18, fontWeight: 'bold', color: '#222' },
+  stickyButton: { backgroundColor: '#2563eb', paddingVertical: 10, paddingHorizontal: 22, borderRadius: 8 },
+  stickyButtonText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
+  modalOverlay: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalContent: { width: '88%', backgroundColor: 'white', padding: 20, borderRadius: 14 },
+  modalTitle: { fontSize: 17, fontWeight: 'bold', marginBottom: 10 },
+  textArea: { borderColor: '#ccc', borderWidth: 1, borderRadius: 6, padding: 10, height: 90, fontSize: 15, backgroundColor: '#f8fafc' },
+  modalActions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 },
+  modalCancel: { padding: 10 },
+  modalSend: { backgroundColor: '#2563eb', padding: 10, borderRadius: 6 },
+  sendOfferBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#2563eb', padding: 10, borderRadius: 8, marginTop: 8, alignSelf: 'flex-start' },
+  sendOfferBtnText: { color: 'white', fontWeight: 'bold', fontSize: 15, marginLeft: 8 },
+  reviewCard: { backgroundColor: '#f3f4f6', borderRadius: 8, padding: 10, marginTop: 8 }
 });

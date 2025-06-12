@@ -19,12 +19,26 @@ export type Ticket = {
   description?: string;
 };
 
-export type Gig = {
+export type GigOption = {
   id: string;
   title: string;
   description: string;
-  categoryId: string;
-  tickets: Ticket[];
+  price: number;
+};
+
+export type Gig = {
+  id: string;
+  artistId: string;
+  title: string;
+  description: string;
+  basePrice: number;
+  images: string[];
+  category: string; // Use string for category name for marketplace compatibility
+  options: GigOption[];
+  location: string;
+  rating: number;
+  reviewCount: number;
+  createdAt: Date;
 };
 
 interface SecuritySettings {
@@ -213,7 +227,7 @@ function artistReducer(state: ArtistState, action: ArtistAction): ArtistState {
       return {
         ...state,
         categories: state.categories.filter((c) => c.id !== action.payload),
-        gigs: state.gigs.filter((g) => g.categoryId !== action.payload),
+        gigs: state.gigs.filter((g) => g.category !== action.payload),
       };
     case 'UPDATE_SETTINGS':
       return {
@@ -224,14 +238,8 @@ function artistReducer(state: ArtistState, action: ArtistAction): ArtistState {
         },
       };
     case 'ADD_TICKET_TO_GIG': {
-      return {
-        ...state,
-        gigs: state.gigs.map((gig) =>
-          gig.id === action.payload.gigId
-            ? { ...gig, tickets: [...gig.tickets, action.payload.ticket] }
-            : gig
-        ),
-      };
+      // The new Gig type does not support tickets, so this action is now a no-op or should be removed.
+      return state;
     }
     default:
       return state;
