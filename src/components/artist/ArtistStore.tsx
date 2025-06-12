@@ -11,6 +11,12 @@ export type Ticket = {
   name: string;
   price: number;
   quantity: number;
+  date?: string;
+  time?: string;
+  flyer?: string;
+  location?: string;
+  contact?: string;
+  description?: string;
 };
 
 export type Gig = {
@@ -75,7 +81,8 @@ type ArtistAction =
   | { type: 'ADD_CATEGORY'; payload: Omit<Category, 'id'> }
   | { type: 'UPDATE_CATEGORY'; payload: Category }
   | { type: 'DELETE_CATEGORY'; payload: string }
-  | { type: 'UPDATE_SETTINGS'; payload: Partial<ArtistSettings> };
+  | { type: 'UPDATE_SETTINGS'; payload: Partial<ArtistSettings> }
+  | { type: 'ADD_TICKET_TO_GIG'; payload: { gigId: string; ticket: Ticket } };
 
 const initialState: ArtistState = {
   settings: {
@@ -216,6 +223,16 @@ function artistReducer(state: ArtistState, action: ArtistAction): ArtistState {
           ...action.payload,
         },
       };
+    case 'ADD_TICKET_TO_GIG': {
+      return {
+        ...state,
+        gigs: state.gigs.map((gig) =>
+          gig.id === action.payload.gigId
+            ? { ...gig, tickets: [...gig.tickets, action.payload.ticket] }
+            : gig
+        ),
+      };
+    }
     default:
       return state;
   }
@@ -236,6 +253,7 @@ interface ArtistContextType extends ArtistState {
   updateCategory: (category: Category) => void;
   deleteCategory: (id: string) => void;
   updateSettings: (settings: Partial<ArtistSettings>) => void;
+  addTicketToGig: (gigId: string, ticket: Ticket) => void;
 }
 
 const ArtistContext = createContext<ArtistContextType | undefined>(undefined);
@@ -261,6 +279,7 @@ export const ArtistStoreProvider: React.FC<{ children: ReactNode }> = ({ childre
     updateCategory: (category) => dispatch({ type: 'UPDATE_CATEGORY', payload: category }),
     deleteCategory: (id) => dispatch({ type: 'DELETE_CATEGORY', payload: id }),
     updateSettings: (settings) => dispatch({ type: 'UPDATE_SETTINGS', payload: settings }),
+    addTicketToGig: (gigId, ticket) => dispatch({ type: 'ADD_TICKET_TO_GIG', payload: { gigId, ticket } }),
   };
 
   return <ArtistContext.Provider value={value}>{children}</ArtistContext.Provider>;

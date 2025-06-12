@@ -12,9 +12,7 @@ const SettingsPage = () => {
     router.push('/artist/settings/profile');
   };
 
-  const handleSecurity = () => {
-    router.push('/artist/settings/security');
-  };
+
 
   const handlePaymentMethods = () => {
     router.push('/artist/settings/payment');
@@ -65,16 +63,6 @@ const SettingsPage = () => {
       {/* Account Settings */}
       <View style={styles.sectionCard}>
         <Text style={styles.sectionTitle}>Account Settings</Text>
-        <TouchableOpacity style={styles.settingItem} onPress={handleSecurity}>
-          <Ionicons name="lock-closed" size={24} color="#6a0dad" />
-          <View style={styles.settingInfo}>
-            <Text style={styles.settingLabel}>Security</Text>
-            <Text style={styles.settingDescription}>
-              {settings.securitySettings.twoFactorEnabled ? '2FA Enabled' : '2FA Disabled'}
-            </Text>
-          </View>
-          <Ionicons name="chevron-forward" size={24} color="#666" />
-        </TouchableOpacity>
         <TouchableOpacity style={styles.settingItem} onPress={handlePaymentMethods}>
           <Ionicons name="card" size={24} color="#6a0dad" />
           <View style={styles.settingInfo}>
@@ -176,4 +164,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SettingsPage; 
+export default SettingsPage;

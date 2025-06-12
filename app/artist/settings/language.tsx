@@ -16,9 +16,6 @@ const LanguagePage = () => {
     { code: 'en', name: 'English', nativeName: 'English' },
     { code: 'fr', name: 'French', nativeName: 'Français' },
     { code: 'ar', name: 'Arabic', nativeName: 'العربية' },
-    { code: 'es', name: 'Spanish', nativeName: 'Español' },
-    { code: 'de', name: 'German', nativeName: 'Deutsch' },
-    { code: 'it', name: 'Italian', nativeName: 'Italiano' },
   ];
 
   return (

@@ -14,6 +14,7 @@ import { SplashScreen } from 'expo-router';
 import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { AuthProvider } from '@/src/context/AuthContext';
 import { AppProvider } from '@/src/context/AppContext';
+import { ArtistStoreProvider } from '../src/components/artist/ArtistStore';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -41,8 +42,10 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <AppProvider>
-        <Stack screenOptions={{ headerShown: false }} />
-        <StatusBar style="auto" />
+        <ArtistStoreProvider>
+          <Stack screenOptions={{ headerShown: false }} />
+          <StatusBar style="auto" />
+        </ArtistStoreProvider>
       </AppProvider>
     </AuthProvider>
   );

@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useArtistStore } from './ArtistStore';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 
 const ArtistMobileApp = () => {
   const {
@@ -59,6 +60,7 @@ const ArtistMobileApp = () => {
   });
 
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   const addService = () => {
     if (credits < 5) {
@@ -148,7 +150,10 @@ const ArtistMobileApp = () => {
               <Text style={styles.profileDescription}>{artistProfile.description}</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.viewProfileButton}>
+          <TouchableOpacity 
+            style={styles.viewProfileButton}
+            onPress={() => router.push('/artist/settings/profile')}
+          >
             <Text style={styles.viewProfileText}>👁️ View Public Profile</Text>
           </TouchableOpacity>
         </LinearGradient>
@@ -430,53 +435,14 @@ const ArtistMobileApp = () => {
 
   // Settings Page Component
   const SettingsPage = () => {
-    const handleEditProfile = () => {
-      // Navigate to profile edit page
-      // This would typically use navigation.navigate('EditProfile')
-      console.log('Navigate to edit profile');
-    };
-
-    const handleNotifications = () => {
-      toggleNotifications();
-    };
-
-    const handleSecurity = () => {
-      // Navigate to security settings
-      // This would typically use navigation.navigate('SecuritySettings')
-      console.log('Navigate to security settings');
-    };
-
-    const handlePaymentMethods = () => {
-      // Navigate to payment methods
-      // This would typically use navigation.navigate('PaymentMethods')
-      console.log('Navigate to payment methods');
-    };
-
-    const handleLanguage = () => {
-      // Show language selection modal
-      // This would typically show a modal with language options
-      const languages = ['English', 'Spanish', 'French', 'German'];
-      const currentIndex = languages.indexOf(settings.language);
-      const nextLanguage = languages[(currentIndex + 1) % languages.length];
-      updateLanguage(nextLanguage);
-    };
-
-    const handleDarkMode = () => {
-      toggleDarkMode();
-    };
-
-    const handleLogout = () => {
-      // Handle logout logic
-      // This would typically clear auth tokens and navigate to login
-      console.log('Logging out...');
-    };
+    const router = useRouter();
 
     return (
-      <ScrollView style={[styles.container, { paddingTop: insets.top }]}>
+      <ScrollView style={[styles.container, { paddingTop: insets.top }]}> 
         {/* Profile Settings */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Profile Settings</Text>
-          <TouchableOpacity style={styles.settingItem} onPress={handleEditProfile}>
+          <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/artist/settings/profile')}>
             <Ionicons name="person" size={24} color="#6a0dad" />
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>Edit Profile</Text>
@@ -484,55 +450,44 @@ const ArtistMobileApp = () => {
             </View>
             <Ionicons name="chevron-forward" size={24} color="#666" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.settingItem} onPress={handleNotifications}>
+          <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/artist/settings/notifications')}>
             <Ionicons name="notifications" size={24} color="#6a0dad" />
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>Notifications</Text>
-              <Text style={styles.settingDescription}>
-                {settings.notificationsEnabled ? 'Notifications are enabled' : 'Notifications are disabled'}
-              </Text>
+              <Text style={styles.settingDescription}>{settings.notificationsEnabled ? 'Notifications are enabled' : 'Notifications are disabled'}</Text>
             </View>
             <Ionicons name="chevron-forward" size={24} color="#666" />
           </TouchableOpacity>
         </View>
-
         {/* Account Settings */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>Account Settings</Text>
-          <TouchableOpacity style={styles.settingItem} onPress={handleSecurity}>
-            <Ionicons name="lock-closed" size={24} color="#6a0dad" />
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Security</Text>
-              <Text style={styles.settingDescription}>
-                {settings.securitySettings.twoFactorEnabled ? '2FA Enabled' : '2FA Disabled'}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={24} color="#666" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.settingItem} onPress={handlePaymentMethods}>
+          <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/artist/settings/payment')}>
             <Ionicons name="card" size={24} color="#6a0dad" />
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>Payment Methods</Text>
-              <Text style={styles.settingDescription}>
-                {settings.paymentMethods.length} payment methods added
-              </Text>
+              <Text style={styles.settingDescription}>{settings.paymentMethods.length} payment methods added</Text>
             </View>
             <Ionicons name="chevron-forward" size={24} color="#666" />
           </TouchableOpacity>
         </View>
-
         {/* App Settings */}
         <View style={styles.sectionCard}>
           <Text style={styles.sectionTitle}>App Settings</Text>
-          <TouchableOpacity style={styles.settingItem} onPress={handleLanguage}>
+          <TouchableOpacity style={styles.settingItem} onPress={() => router.push('/artist/settings/language')}>
             <Ionicons name="language" size={24} color="#6a0dad" />
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>Language</Text>
-              <Text style={styles.settingDescription}>{settings.language}</Text>
+              <Text style={styles.settingDescription}>
+                {settings.language === 'French' && 'Français'}
+                {settings.language === 'Arabic' && 'العربية'}
+                {settings.language === 'English' && 'English'}
+                {!["French", "Arabic", "English"].includes(settings.language) && 'English'}
+              </Text>
             </View>
             <Ionicons name="chevron-forward" size={24} color="#666" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.settingItem} onPress={handleDarkMode}>
+          <TouchableOpacity style={styles.settingItem} onPress={toggleDarkMode}>
             <Ionicons name="moon" size={24} color="#6a0dad" />
             <View style={styles.settingInfo}>
               <Text style={styles.settingLabel}>Dark Mode</Text>
@@ -541,9 +496,8 @@ const ArtistMobileApp = () => {
             <Ionicons name="chevron-forward" size={24} color="#666" />
           </TouchableOpacity>
         </View>
-
         {/* Logout Button */}
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <TouchableOpacity style={styles.logoutButton} onPress={() => {/* Add logout logic here */}}>
           <Ionicons name="log-out" size={24} color="#fff" />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
@@ -557,6 +511,10 @@ const ArtistMobileApp = () => {
         return <HomePage />;
       case 'calendar':
         return <CalendarPage />;
+      case 'ticket':
+        // Dynamically import the Ticket page
+        const TicketPage = require('./Ticket').default;
+        return <TicketPage />;
       case 'analytics':
         return <AnalyticsPage />;
       case 'settings':
@@ -570,7 +528,7 @@ const ArtistMobileApp = () => {
     <View style={[styles.mainContainer, { paddingTop: insets.top }]}>
       <StatusBar barStyle="light-content" backgroundColor="#6a0dad" />
       {renderContent()}
-      <View style={[styles.tabBar, { paddingBottom: insets.bottom }]}>
+      <View style={[styles.tabBar, { paddingBottom: insets.bottom }]}> 
         <TouchableOpacity 
           style={[styles.tabItem, activeTab === 'home' && styles.activeTab]} 
           onPress={() => setActiveTab('home')}
@@ -584,6 +542,13 @@ const ArtistMobileApp = () => {
         >
           <Ionicons name="calendar" size={24} color={activeTab === 'calendar' ? '#6a0dad' : '#666'} />
           <Text style={[styles.tabText, activeTab === 'calendar' && styles.activeTabText]}>Calendar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.tabItem, activeTab === 'ticket' && styles.activeTab]} 
+          onPress={() => setActiveTab('ticket')}
+        >
+          <Ionicons name="ticket" size={24} color={activeTab === 'ticket' ? '#6a0dad' : '#666'} />
+          <Text style={[styles.tabText, activeTab === 'ticket' && styles.activeTabText]}>Tickets</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.tabItem, activeTab === 'analytics' && styles.activeTab]} 
