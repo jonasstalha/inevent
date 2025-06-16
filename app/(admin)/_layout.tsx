@@ -8,26 +8,12 @@ import { Theme } from '@/src/constants/theme';
 export default function AdminTabLayout() {
   const { user, loading } = useAuth();
 
-  // Check if the user is logged in and has the correct role
-  useEffect(() => {
-    if (!loading && (!user || user.role !== 'admin')) {
-      // Redirect if not an admin user
-      return;
-    }
-  }, [user, loading]);
-
-  // Show loading or redirect if no user or wrong role
   if (loading) {
-    return null;
+    return null; // or a loading spinner
   }
 
-  if (!user) {
+  if (!user || user.role !== 'admin') {
     return <Redirect href="/auth" />;
-  }
-
-  if (user.role !== 'admin') {
-    // Redirect to the appropriate role's layout
-    return <Redirect href={`/(${user.role})`} />;
   }
 
   return (
@@ -38,15 +24,7 @@ export default function AdminTabLayout() {
         tabBarStyle: {
           backgroundColor: Theme.colors.card,
           borderTopColor: Theme.colors.border,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
         },
-        tabBarLabelStyle: {
-          fontFamily: Theme.typography.fontFamily.medium,
-          fontSize: 12,
-        },
-        headerShown: false,
       }}
     >
       <Tabs.Screen

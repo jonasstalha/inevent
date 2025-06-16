@@ -13,6 +13,7 @@ import { Card } from '@/src/components/common/Card';
 import { Theme } from '@/src/constants/theme';
 import * as Google from 'expo-auth-session/providers/google';
 import { registerWithEmail } from '@/src/firebase/firebaseAuth';
+import { createUserProfile } from '@/src/firebase/userService';
 
 // TypeScript interfaces
 interface LoginValues {
@@ -42,7 +43,7 @@ const RegisterSchema = Yup.object().shape({
   role: Yup.string().oneOf(['artist', 'client'], 'Invalid role').required('Role is required'),
 });
 
-export default function AuthScreen() {
+export default function AuthPage() {
   const [isLoginMode, setIsLoginMode] = useState(true);
   const { login, register } = useAuth();
   const router = useRouter();
@@ -82,22 +83,23 @@ export default function AuthScreen() {
       setSubmitting(true);
       // Remove mockUsers logic, use Firebase Auth only
       try {
-        await login(values.email, values.password);
-        // Fetch user role from Firestore
-        // Assume getUserRole is available from userService
-        const { getUserRole } = await import('@/src/firebase/userService');
-        // Use email as uid for getUserRole (if that's how you store it), or get uid from auth
-        const role = await getUserRole(values.email);
-        // Navigate based on role using correct Expo Router type
+        const userCredential = await login(values.email, values.password);
+        const { getUserRole } = await import('../src/firebase/userService');
+        const role = await getUserRole(userCredential.user.uid);
+        
+        if (!role) throw new Error('User role not found');
+
+        // Navigate based on role
+        // Navigate based on role
         switch (role) {
           case 'client':
-            router.push({ pathname: '/(client)' });
+            router.replace('/(client)');
             break;
           case 'artist':
-            router.push({ pathname: '/(artist)/ArtistPlatform' });
+            router.replace('/artist/ArtistPlatform');
             break;
           case 'admin':
-            router.push({ pathname: '/(admin)' });
+            router.replace('/(admin)');
             break;
           default:
             Alert.alert('Error', 'Unknown user role');
@@ -132,30 +134,33 @@ export default function AuthScreen() {
   ) => {
     try {
       setSubmitting(true);
-      const role = values.role as 'artist' | 'client' | 'admin';
-      // Pass name as third argument
-      const userCredential = await registerWithEmail(values.email, values.password, values.name);
-      const uid = userCredential.user.uid;
-      // Now create the user profile in Firestore with UID
-      await createUserProfile(uid, values.email, values.phone, role);
-      // Navigate based on role after successful registration
-      switch (role) {
-        case 'client':
-          router.push({ pathname: '/(client)' });
-          break;
-        case 'artist':
-          router.push({ pathname: '/(artist)/ArtistPlatform' });
-          break;
-        case 'admin':
-          router.push({ pathname: '/(admin)' });
-          break;
-        default:
-          Alert.alert('Error', 'Unknown user role');
+      const userCredential = await register(values.email, values.password, values.name, values.role as 'artist' | 'client' | 'admin');
+      
+      if (userCredential.user) {
+        await createUserProfile(userCredential.user.uid, {
+          email: values.email,
+          name: values.name,
+          phone: values.phone,
+          role: values.role
+        });
+
+        // Navigate based on role
+        switch (values.role) {
+          case 'client':
+            router.replace('/(client)');
+            break;
+          case 'artist':
+            router.replace('/artist/ArtistPlatform');
+            break;
+          case 'admin':
+            router.replace('/(admin)');
+            break;
+        }
       }
-    } catch (authError) {
-      setErrors({ 
-        email: 'Invalid email or password',
-        password: 'Invalid email or password'
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      setErrors({
+        email: error.message,
       });
     } finally {
       setSubmitting(false);
@@ -337,7 +342,22 @@ export default function AuthScreen() {
       </ScrollView>
     </KeyboardAvoidingView>
   );
-}
+};
+
+// Validation schemas
+const loginSchema = Yup.object().shape({
+  email: Yup.string().email('Invalid email').required('Email is required'),
+  password: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
+});
+
+const registerSchema = Yup.object().shape({
+  name: Yup.string().required('Name is required'),
+  email: Yup.string().email('Invalid email').required('Email is required'),
+  password: Yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
+  confirmPassword: Yup.string()
+    .oneOf([Yup.ref('password')], 'Passwords must match')
+    .required('Password confirmation is required'),
+});
 
 const styles = StyleSheet.create({
   keyboardAvoidingView: { 

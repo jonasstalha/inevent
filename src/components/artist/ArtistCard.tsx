@@ -1,19 +1,54 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, View, Text, Image, TouchableOpacity, Button } from 'react-native';
-import { Star, MapPin } from 'lucide-react-native';
+import { Star, MapPin, Heart } from 'lucide-react-native';
 import { Card } from '../common/Card';
 import { Theme } from '../../constants/theme';
 import { Artist } from '../../models/types';
+import { useRouter } from 'expo-router';
 
 interface ArtistCardProps {
   artist: Artist;
-  onPress: (artistId: string) => void;
-  onHire: (artistId: string) => void;
+  onPress?: (artistId: string) => void;
+  onHire?: (artistId: string) => void;
+  onSave?: (artistId: string) => void;
+  isSaved?: boolean;
 }
 
-export const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onPress, onHire }) => {
+export function ArtistCard({ artist, onPress, onHire, onSave, isSaved = false }: ArtistCardProps) {
+  const router = useRouter();
+  const [saved, setSaved] = useState(isSaved);
+
+  const handlePress = () => {
+    if (onPress) {
+      onPress(artist.id);
+    } else {
+      router.push({
+        pathname: '/(client)/(hidden)/artist/[id]',
+        params: { 
+          id: artist.id,
+          name: artist.name,
+          image: artist.profileImage,
+          rating: artist.rating,
+          location: artist.location
+        }
+      });
+    }
+  };
+
+  const handleSave = (e: any) => {
+    e.stopPropagation();
+    setSaved(!saved);
+    if (onSave) {
+      onSave(artist.id);
+    }
+  };
+
   return (
-    <TouchableOpacity onPress={() => onPress(artist.id)} activeOpacity={0.9}>
+    <TouchableOpacity 
+      style={styles.container}
+      onPress={handlePress}
+      activeOpacity={0.7}
+    >
       <Card variant="elevated" style={styles.container}>
         <View style={styles.header}>
           <Image
@@ -46,14 +81,27 @@ export const ArtistCard: React.FC<ArtistCardProps> = ({ artist, onPress, onHire 
             <MapPin size={14} color={Theme.colors.textLight} />
             <Text style={styles.locationText}>{artist.location}</Text>
           </View>
-          <Button title="Hire" onPress={() => onHire(artist.id)} color={Theme.colors.primary} />
+          <Button title="Hire" onPress={() => onHire?.(artist.id)} color={Theme.colors.primary} />
         </View>
         
         {artist.featured && <View style={styles.featuredBadge}><Text style={styles.featuredText}>Featured</Text></View>}
+        
+        <View style={styles.saveButtonContainer}>
+          <TouchableOpacity 
+            style={styles.saveButton}
+            onPress={handleSave}
+          >
+            <Heart 
+              size={20} 
+              color={saved ? Theme.colors.primary : Theme.colors.textLight}
+              fill={saved ? Theme.colors.primary : 'none'}
+            />
+          </TouchableOpacity>
+        </View>
       </Card>
     </TouchableOpacity>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -142,5 +190,13 @@ const styles = StyleSheet.create({
     fontFamily: Theme.typography.fontFamily.medium,
     fontSize: Theme.typography.fontSize.xs,
     color: Theme.colors.secondary,
+  },
+  saveButtonContainer: {
+    position: 'absolute',
+    top: Theme.spacing.sm,
+    right: Theme.spacing.sm,
+  },
+  saveButton: {
+    padding: Theme.spacing.xs,
   },
 });

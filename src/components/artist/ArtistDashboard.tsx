@@ -251,91 +251,209 @@ const ArtistMobileApp = () => {
   };
 
   // Home Page Component
-  const HomePage = () => (
-    <ScrollView style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Profile Section */}
-      <View style={styles.profileCard}>
-        <LinearGradient
-          colors={['#6a0dad', '#4a148c']}
-          style={styles.profileGradient}
-        >
-          <View style={styles.profileHeader}>
-            <Image 
-              source={{ uri: artistProfile.image }} 
-              style={styles.profileImage}
-            />
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>{artistProfile.name}</Text>
-              <View style={styles.ratingContainer}>
-                <Text style={styles.ratingStar}>⭐</Text>
-                <Text style={styles.ratingText}>{artistProfile.rating} ({artistProfile.reviewsCount} reviews)</Text>
+  const HomePage = () => {
+    // Mock data for services
+    const [mockGigs, setMockGigs] = useState([
+      {
+        id: '1',
+        title: 'Wedding Photography Package',
+        description: 'Professional wedding photography with 8 hours coverage, 500+ edited photos, and online gallery',
+        date: '2024-04-15',
+        ticketTypes: [
+          { name: 'Basic Package', price: '1200', quantity: '10' },
+          { name: 'Premium Package', price: '2000', quantity: '5' }
+        ],
+        location: 'Grand Hotel, New York',
+        contactPhone: '+1 234 567 8900',
+        contactEmail: 'contact@example.com'
+      },
+      {
+        id: '2',
+        title: 'Corporate Event DJ Service',
+        description: 'Professional DJ service for corporate events, including sound system and lighting',
+        date: '2024-05-20',
+        ticketTypes: [
+          { name: '4 Hours Package', price: '800', quantity: '15' },
+          { name: '6 Hours Package', price: '1200', quantity: '10' }
+        ],
+        location: 'Business Center, Los Angeles',
+        contactPhone: '+1 234 567 8901',
+        contactEmail: 'dj@example.com'
+      },
+      {
+        id: '3',
+        title: 'Birthday Party Photography',
+        description: '3 hours of event coverage, 200+ edited photos, and same-day highlights',
+        date: '2024-06-10',
+        ticketTypes: [
+          { name: 'Standard Package', price: '500', quantity: '20' }
+        ],
+        location: 'Community Center, Chicago',
+        contactPhone: '+1 234 567 8902',
+        contactEmail: 'birthday@example.com'
+      }
+    ]);
+
+    // Mock data for tickets
+    const [mockTickets, setMockTickets] = useState([
+      {
+        id: '1',
+        name: 'Summer Music Festival VIP',
+        price: '150',
+        quantity: '100',
+        sold: '45',
+        date: '2024-07-15',
+        location: 'Central Park, New York'
+      },
+      {
+        id: '2',
+        name: 'Food & Wine Expo Pass',
+        price: '75',
+        quantity: '200',
+        sold: '120',
+        date: '2024-08-20',
+        location: 'Convention Center, Chicago'
+      },
+      {
+        id: '3',
+        name: 'Tech Conference Early Bird',
+        price: '299',
+        quantity: '50',
+        sold: '30',
+        date: '2024-09-05',
+        location: 'Tech Hub, San Francisco'
+      }
+    ]);
+
+    const handleDeleteService = (id: string) => {
+      Alert.alert(
+        'Delete Service',
+        'Are you sure you want to delete this service?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel'
+          },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => {
+              setMockGigs(mockGigs.filter(gig => gig.id !== id));
+            }
+          }
+        ]
+      );
+    };
+
+    const handleDeleteTicket = (id: string) => {
+      Alert.alert(
+        'Delete Ticket',
+        'Are you sure you want to delete this ticket?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel'
+          },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => {
+              setMockTickets(mockTickets.filter(ticket => ticket.id !== id));
+            }
+          }
+        ]
+      );
+    };
+
+    return (
+      <ScrollView style={[styles.container, { paddingTop: insets.top }]}>
+        {/* Profile Section */}
+        <View style={styles.profileCard}>
+          <LinearGradient
+            colors={['#6a0dad', '#4a148c']}
+            style={styles.profileGradient}
+          >
+            <View style={styles.profileHeader}>
+              <Image 
+                source={{ uri: artistProfile.image }} 
+                style={styles.profileImage}
+              />
+              <View style={styles.profileInfo}>
+                <Text style={styles.profileName}>{artistProfile.name}</Text>
+                <View style={styles.ratingContainer}>
+                  <Text style={styles.ratingStar}>⭐</Text>
+                  <Text style={styles.ratingText}>{artistProfile.rating} ({artistProfile.reviewsCount} reviews)</Text>
+                </View>
+                <Text style={styles.profileDescription}>{artistProfile.description}</Text>
               </View>
-              <Text style={styles.profileDescription}>{artistProfile.description}</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.viewProfileButton}
+              onPress={() => router.push('/artist/settings/profile')}
+            >
+              <Text style={styles.viewProfileText}>👁️ View Public Profile</Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+
+        {/* Account & Billing Section */}
+        <View style={styles.accountCard}>
+          <Text style={styles.cardTitle}>My Account</Text>
+          <View style={styles.balanceContainer}>
+            <View style={styles.balanceItem}>
+              <Text style={styles.balanceLabel}>Available Credits</Text>
+              <Text style={styles.balanceValue}>{credits}</Text>
+            </View>
+            <View style={styles.balanceDivider} />
+            <View style={styles.balanceItem}>
+              <Text style={styles.balanceLabel}>Wallet Balance</Text>
+              <Text style={styles.balanceValue}>{walletBalance.toFixed(2)} MAD</Text>
             </View>
           </View>
-          <TouchableOpacity 
-            style={styles.viewProfileButton}
-            onPress={() => router.push('/artist/settings/profile')}
-          >
-            <Text style={styles.viewProfileText}>👁️ View Public Profile</Text>
+          <TouchableOpacity style={styles.addFundsButton}>
+            <Text style={styles.addFundsText}>➕ Add Funds</Text>
           </TouchableOpacity>
-        </LinearGradient>
-      </View>
-
-      {/* Account & Billing Section */}
-      <View style={styles.accountCard}>
-        <Text style={styles.cardTitle}>My Account</Text>
-        <View style={styles.balanceContainer}>
-          <View style={styles.balanceItem}>
-            <Text style={styles.balanceLabel}>Available Credits</Text>
-            <Text style={styles.balanceValue}>{credits}</Text>
-          </View>
-          <View style={styles.balanceDivider} />
-          <View style={styles.balanceItem}>
-            <Text style={styles.balanceLabel}>Wallet Balance</Text>
-            <Text style={styles.balanceValue}>{walletBalance.toFixed(2)} MAD</Text>
-          </View>
         </View>
-        <TouchableOpacity style={styles.addFundsButton}>
-          <Text style={styles.addFundsText}>➕ Add Funds</Text>
-        </TouchableOpacity>
-      </View>
 
-      {/* Services Container */}
-      <View style={styles.sectionCard}>
-        <Text style={styles.cardTitle}>My Services</Text>
-        {gigs.length > 0 ? (
-          gigs.map((gig, index) => (
+        {/* Services Container */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.cardTitle}>My Services</Text>
+          {mockGigs.map((gig, index) => (
             <View key={index} style={styles.serviceItem}>
-              <Text style={styles.serviceTitle}>{gig.title}</Text>
-              <Text style={styles.serviceDescription}>{gig.description}</Text>
+              <View style={styles.serviceContent}>
+                <Text style={styles.serviceTitle}>{gig.title}</Text>
+                <Text style={styles.serviceDescription}>{gig.description}</Text>
+                <View style={styles.serviceDetails}>
+                  <Text style={styles.servicePrice}>{gig.ticketTypes[0].price} MAD</Text>
+                  <Text style={styles.serviceDate}>{gig.date}</Text>
+                </View>
+              </View>
               <View style={styles.serviceActions}>
                 <TouchableOpacity style={styles.actionButton}>
                   <Ionicons name="pencil" size={20} color="#6a0dad" />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.actionButton}>
+                <TouchableOpacity 
+                  style={styles.actionButton}
+                  onPress={() => handleDeleteService(gig.id)}
+                >
                   <Ionicons name="trash" size={20} color="#ff4444" />
                 </TouchableOpacity>
               </View>
             </View>
-          ))
-        ) : (
-          <Text style={styles.emptyText}>No services added yet</Text>
-        )}
-        <TouchableOpacity 
-          style={styles.addTicketButton}
-          onPress={() => setActiveTab('calendar')}
-        >
-          <Ionicons name="add-circle" size={20} color="#fff" style={styles.buttonIcon} />
-          <Text style={styles.addTicketText}>Add Service <Text style={{color:'#ff4444', fontWeight:'bold'}}>(-5 credits)</Text></Text>
-        </TouchableOpacity>
-      </View>
+          ))}
+          <TouchableOpacity 
+            style={styles.addTicketButton}
+            onPress={() => setActiveTab('calendar')}
+          >
+            <Ionicons name="add-circle" size={20} color="#fff" style={styles.buttonIcon} />
+            <Text style={styles.addTicketText}>Add Service <Text style={{color:'#ff4444', fontWeight:'bold'}}>(-5 credits)</Text></Text>
+          </TouchableOpacity>
+        </View>
 
-      {/* Tickets Container */}
-      <View style={styles.sectionCard}>
-        <Text style={styles.cardTitle}>My Tickets</Text>
-        {gigs.flatMap(gig => gig.tickets || []).length > 0 ? (
-          gigs.flatMap(gig => (gig.tickets || []).map((ticket, index) => (
+        {/* Tickets Container */}
+        <View style={styles.sectionCard}>
+          <Text style={styles.cardTitle}>My Tickets</Text>
+          {mockTickets.map((ticket, index) => (
             <View key={index} style={styles.ticketItem}>
               <Text style={styles.ticketTitle}>{ticket.name}</Text>
               <Text style={styles.ticketPrice}>{ticket.price} MAD</Text>
@@ -344,31 +462,41 @@ const ArtistMobileApp = () => {
                 <TouchableOpacity style={styles.actionButton}>
                   <Ionicons name="pencil" size={20} color="#6a0dad" />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.actionButton}>
+                <TouchableOpacity 
+                  style={styles.actionButton}
+                  onPress={() => handleDeleteTicket(ticket.id)}
+                >
                   <Ionicons name="trash" size={20} color="#ff4444" />
                 </TouchableOpacity>
               </View>
             </View>
-          )))
-        ) : (
-          <Text style={styles.emptyText}>No tickets added yet</Text>
-        )}
-        <TouchableOpacity onPress={() => setActiveTab('ticket')} style={styles.addTicketButton}>
-          <Text style={styles.addTicketText}>➕ Add Ticket <Text style={{color:'#ff4444', fontWeight:'bold'}}>(-10 credits)</Text></Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
-  );
+          ))}
+          <TouchableOpacity onPress={() => setActiveTab('ticket')} style={styles.addTicketButton}>
+            <Text style={styles.addTicketText}>➕ Add Ticket <Text style={{color:'#ff4444', fontWeight:'bold'}}>(-10 credits)</Text></Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    );
+  };
 
   // Calendar Page Component
   const CalendarPage = () => (
-    <ScrollView style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Create New Event */}
+    <ScrollView style={[styles.container, { paddingTop: 0 }]}>
+      {/* Page Header */}
+      <View style={[styles.pageHeader, { paddingTop: insets.top }]}>
+        <LinearGradient
+          colors={['#6a0dad', '#4a148c']}
+          style={styles.pageHeaderGradient}
+        >
+          <Text style={styles.pageTitle}>Create New Service</Text>
+          <Text style={styles.pageSubtitle}>Fill in the details below to create your service</Text>
+        </LinearGradient>
+      </View>
+
+      {/* Create New Service Form */}
       <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Create New Event</Text>
-        
-        {/* Event Images */}
-        <Text style={styles.formSubtitle}>Event Images</Text>
+        {/* Service Images */}
+        <Text style={styles.formSubtitle}>Service Images</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScrollView}>
           {newEvent.images?.map((img, idx) => (
             <View key={img} style={styles.imageContainer}>
@@ -406,172 +534,193 @@ const ArtistMobileApp = () => {
           </TouchableOpacity>
         </ScrollView>
 
-        <TextInput 
-          placeholder="Event Title"
-          style={styles.input}
-          placeholderTextColor="#666"
-          value={newEvent.title}
-          onChangeText={(text) => setNewEvent({...newEvent, title: text})}
-        />
-        <TextInput 
-          placeholder="Event Description"
-          style={[styles.input, styles.textArea]}
-          multiline
-          placeholderTextColor="#666"
-          value={newEvent.description}
-          onChangeText={(text) => setNewEvent({...newEvent, description: text})}
-        />
+        {/* Basic Information */}
+        <View style={styles.formSection}>
+          <Text style={styles.formSubtitle}>Basic Information</Text>
+          <TextInput 
+            placeholder="Service Title"
+            style={styles.input}
+            placeholderTextColor="#666"
+            value={newEvent.title}
+            onChangeText={(text) => setNewEvent({...newEvent, title: text})}
+          />
+          <TextInput 
+            placeholder="Service Description"
+            style={[styles.input, styles.textArea]}
+            multiline
+            placeholderTextColor="#666"
+            value={newEvent.description}
+            onChangeText={(text) => setNewEvent({...newEvent, description: text})}
+          />
+        </View>
 
         {/* Location */}
-        <Text style={styles.formSubtitle}>Location</Text>
-        <TextInput
-          placeholder="Event Location"
-          style={styles.input}
-          placeholderTextColor="#666"
-          value={newEvent.location}
-          onChangeText={(text) => setNewEvent({...newEvent, location: text})}
-        />
-        <TouchableOpacity 
-          style={styles.locationButton}
-          onPress={async () => {
-            let { status } = await Location.requestForegroundPermissionsAsync();
-            if (status !== 'granted') {
-              Alert.alert('Permission denied', 'Location permission is required to pick a location.');
-              return;
-            }
-            let location = await Location.getCurrentPositionAsync({});
-            setNewEvent({
-              ...newEvent,
-              coordinates: {
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude
+        <View style={styles.formSection}>
+          <Text style={styles.formSubtitle}>Location</Text>
+          <TextInput
+            placeholder="Service Location"
+            style={styles.input}
+            placeholderTextColor="#666"
+            value={newEvent.location}
+            onChangeText={(text) => setNewEvent({...newEvent, location: text})}
+          />
+          <TouchableOpacity 
+            style={styles.locationButton}
+            onPress={async () => {
+              let { status } = await Location.requestForegroundPermissionsAsync();
+              if (status !== 'granted') {
+                Alert.alert('Permission denied', 'Location permission is required to pick a location.');
+                return;
               }
-            });
-          }}
-        >
-          <Ionicons name="location" size={20} color="#6a0dad" />
-          <Text style={styles.locationButtonText}>Use Current Location</Text>
-        </TouchableOpacity>
+              let location = await Location.getCurrentPositionAsync({});
+              setNewEvent({
+                ...newEvent,
+                coordinates: {
+                  latitude: location.coords.latitude,
+                  longitude: location.coords.longitude
+                }
+              });
+            }}
+          >
+            <Ionicons name="location" size={20} color="#6a0dad" />
+            <Text style={styles.locationButtonText}>Use Current Location</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Date and Time */}
-        <Text style={styles.formSubtitle}>Date and Time</Text>
-        <View style={styles.dateTimeContainer}>
-          <TextInput 
-            placeholder="Date (DD/MM/YYYY)"
-            style={[styles.input, { flex: 1 }]}
-            placeholderTextColor="#666"
-            value={newEvent.date}
-            onChangeText={(text) => setNewEvent({...newEvent, date: text})}
-          />
-          <TextInput 
-            placeholder="Time"
-            style={[styles.input, { flex: 1 }]}
-            placeholderTextColor="#666"
-            value={newEvent.time}
-            onChangeText={(text) => setNewEvent({...newEvent, time: text})}
-          />
+        <View style={styles.formSection}>
+          <Text style={styles.formSubtitle}>Date and Time</Text>
+          <View style={styles.dateTimeContainer}>
+            <TextInput 
+              placeholder="Date (DD/MM/YYYY)"
+              style={[styles.input, { flex: 1 }]}
+              placeholderTextColor="#666"
+              value={newEvent.date}
+              onChangeText={(text) => setNewEvent({...newEvent, date: text})}
+            />
+            <TextInput 
+              placeholder="Time"
+              style={[styles.input, { flex: 1 }]}
+              placeholderTextColor="#666"
+              value={newEvent.time}
+              onChangeText={(text) => setNewEvent({...newEvent, time: text})}
+            />
+          </View>
         </View>
 
         {/* Contact Information */}
-        <Text style={styles.formSubtitle}>Contact Information</Text>
-        <TextInput
-          placeholder="Contact Phone"
-          style={styles.input}
-          placeholderTextColor="#666"
-          keyboardType="phone-pad"
-          value={newEvent.contactPhone}
-          onChangeText={(text) => setNewEvent({...newEvent, contactPhone: text})}
-        />
-        <TextInput
-          placeholder="Contact Email"
-          style={styles.input}
-          placeholderTextColor="#666"
-          keyboardType="email-address"
-          value={newEvent.contactEmail}
-          onChangeText={(text) => setNewEvent({...newEvent, contactEmail: text})}
-        />
-
-        {/* Ticket Types */}
-        <Text style={styles.formSubtitle}>Ticket Types</Text>
-        {newEvent.ticketTypes.map((ticket, index) => (
-          <View key={index} style={styles.ticketTypeContainer}>
-            <TextInput
-              placeholder="Ticket Name"
-              value={ticket.name}
-              onChangeText={(text) => {
-                const updatedTypes = [...newEvent.ticketTypes];
-                updatedTypes[index].name = text;
-                setNewEvent({...newEvent, ticketTypes: updatedTypes});
-              }}
-              style={styles.input}
-              placeholderTextColor="#666"
-            />
-            <TextInput
-              placeholder="Price"
-              value={ticket.price}
-              onChangeText={(text) => {
-                const updatedTypes = [...newEvent.ticketTypes];
-                updatedTypes[index].price = text.replace(/[^0-9]/g, '');
-                setNewEvent({...newEvent, ticketTypes: updatedTypes});
-              }}
-              style={styles.input}
-              keyboardType="numeric"
-              placeholderTextColor="#666"
-            />
-            <TextInput
-              placeholder="Quantity"
-              value={ticket.quantity}
-              onChangeText={(text) => {
-                const updatedTypes = [...newEvent.ticketTypes];
-                updatedTypes[index].quantity = text.replace(/[^0-9]/g, '');
-                setNewEvent({...newEvent, ticketTypes: updatedTypes});
-              }}
-              style={styles.input}
-              keyboardType="numeric"
-              placeholderTextColor="#666"
-            />
-            {newEvent.ticketTypes.length > 1 && (
-              <TouchableOpacity 
-                onPress={() => {
-                  const updatedTypes = newEvent.ticketTypes.filter((_, i) => i !== index);
-                  setNewEvent({...newEvent, ticketTypes: updatedTypes});
-                }}
-                style={styles.removeButton}
-              >
-                <Ionicons name="trash" size={20} color="#ff4444" />
-              </TouchableOpacity>
-            )}
-          </View>
-        ))}
-        <TouchableOpacity 
-          onPress={addTicketType}
-          style={styles.addButton}
-        >
-          <Text style={styles.addButtonText}>+ Add Ticket Type</Text>
-        </TouchableOpacity>
-
-        {/* Coupon Code */}
-        <Text style={styles.formSubtitle}>Coupon Code</Text>
-        <View style={styles.couponContainer}>
+        <View style={styles.formSection}>
+          <Text style={styles.formSubtitle}>Contact Information</Text>
           <TextInput
-            placeholder="Coupon Code"
-            style={[styles.input, { flex: 1 }]}
+            placeholder="Contact Phone"
+            style={styles.input}
             placeholderTextColor="#666"
-            value={newEvent.couponCode || ''}
-            onChangeText={(text) => setNewEvent({...newEvent, couponCode: text})}
+            keyboardType="phone-pad"
+            value={newEvent.contactPhone}
+            onChangeText={(text) => setNewEvent({...newEvent, contactPhone: text})}
           />
           <TextInput
-            placeholder="Discount %"
-            style={[styles.input, { width: 100 }]}
+            placeholder="Contact Email"
+            style={styles.input}
             placeholderTextColor="#666"
-            keyboardType="numeric"
-            value={newEvent.discountPercentage || ''}
-            onChangeText={(text) => setNewEvent({...newEvent, discountPercentage: text.replace(/[^0-9]/g, '')})}
+            keyboardType="email-address"
+            value={newEvent.contactEmail}
+            onChangeText={(text) => setNewEvent({...newEvent, contactEmail: text})}
           />
         </View>
 
+        {/* Service Options */}
+        <View style={styles.formSection}>
+          <Text style={styles.formSubtitle}>Service Options</Text>
+          {newEvent.ticketTypes.map((option, index) => (
+            <View key={index} style={styles.ticketTypeContainer}>
+              <TextInput
+                placeholder="Option Name"
+                value={option.name}
+                onChangeText={(text) => {
+                  const updatedTypes = [...newEvent.ticketTypes];
+                  updatedTypes[index].name = text;
+                  setNewEvent({...newEvent, ticketTypes: updatedTypes});
+                }}
+                style={styles.input}
+                placeholderTextColor="#666"
+              />
+              <TextInput
+                placeholder="Price"
+                value={option.price}
+                onChangeText={(text) => {
+                  const updatedTypes = [...newEvent.ticketTypes];
+                  updatedTypes[index].price = text.replace(/[^0-9]/g, '');
+                  setNewEvent({...newEvent, ticketTypes: updatedTypes});
+                }}
+                style={styles.input}
+                keyboardType="numeric"
+                placeholderTextColor="#666"
+              />
+              <TextInput
+                placeholder="Quantity"
+                value={option.quantity}
+                onChangeText={(text) => {
+                  const updatedTypes = [...newEvent.ticketTypes];
+                  updatedTypes[index].quantity = text.replace(/[^0-9]/g, '');
+                  setNewEvent({...newEvent, ticketTypes: updatedTypes});
+                }}
+                style={styles.input}
+                keyboardType="numeric"
+                placeholderTextColor="#666"
+              />
+              {newEvent.ticketTypes.length > 1 && (
+                <TouchableOpacity 
+                  onPress={() => {
+                    const updatedTypes = newEvent.ticketTypes.filter((_, i) => i !== index);
+                    setNewEvent({...newEvent, ticketTypes: updatedTypes});
+                  }}
+                  style={styles.removeButton}
+                >
+                  <Ionicons name="trash" size={20} color="#ff4444" />
+                </TouchableOpacity>
+              )}
+            </View>
+          ))}
+          <TouchableOpacity 
+            onPress={addTicketType}
+            style={styles.addButton}
+          >
+            <Ionicons name="add-circle" size={20} color="#6a0dad" style={styles.buttonIcon} />
+            <Text style={styles.addButtonText}>Add Service Option</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Coupon Code */}
+        <View style={styles.formSection}>
+          <Text style={styles.formSubtitle}>Coupon Code</Text>
+          <View style={styles.couponContainer}>
+            <TextInput
+              placeholder="Coupon Code"
+              style={[styles.input, { flex: 1 }]}
+              placeholderTextColor="#666"
+              value={newEvent.couponCode || ''}
+              onChangeText={(text) => setNewEvent({...newEvent, couponCode: text})}
+            />
+            <TextInput
+              placeholder="Discount %"
+              style={[styles.input, { width: 100 }]}
+              placeholderTextColor="#666"
+              keyboardType="numeric"
+              value={newEvent.discountPercentage || ''}
+              onChangeText={(text) => setNewEvent({...newEvent, discountPercentage: text.replace(/[^0-9]/g, '')})}
+            />
+          </View>
+        </View>
+
         <TouchableOpacity style={styles.createEventButton} onPress={addEvent}>
-          <Text style={styles.createEventText}>Create Event <Text style={{color:'#ff4444', fontWeight:'bold'}}>(-10 credits)</Text></Text>
+          <LinearGradient
+            colors={['#6a0dad', '#4a148c']}
+            style={styles.createEventGradient}
+          >
+            <Ionicons name="checkmark-circle" size={24} color="#fff" style={styles.buttonIcon} />
+            <Text style={styles.createEventText}>Create Service <Text style={{color:'#ff4444', fontWeight:'bold'}}>(-5 credits)</Text></Text>
+          </LinearGradient>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -1209,6 +1358,112 @@ const styles = StyleSheet.create({
     color: '#6a0dad',
     marginLeft: 8,
     fontWeight: '500',
+  },
+  pageHeader: {
+    marginBottom: 16,
+  },
+  pageHeaderGradient: {
+    padding: 24,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  pageTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  pageSubtitle: {
+    fontSize: 16,
+    color: '#fff',
+    opacity: 0.9,
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+    paddingHorizontal: 16,
+  },
+  progressStep: {
+    alignItems: 'center',
+  },
+  progressDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#e0e0e0',
+    marginBottom: 8,
+  },
+  progressDotActive: {
+    backgroundColor: '#6a0dad',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+  },
+  progressLine: {
+    flex: 1,
+    height: 2,
+    backgroundColor: '#e0e0e0',
+    marginHorizontal: 8,
+  },
+  progressText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  formSection: {
+    marginBottom: 24,
+  },
+  createEventGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+  },
+  createEventText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  serviceItem: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginBottom: 12,
+    padding: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  serviceContent: {
+    flex: 1,
+  },
+  serviceTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  serviceDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 12,
+  },
+  serviceDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  servicePrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#6a0dad',
+  },
+  serviceDate: {
+    fontSize: 14,
+    color: '#666',
   },
 });
 

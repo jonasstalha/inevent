@@ -1,10 +1,10 @@
 import React from 'react';
 import { ArtistStoreProvider } from '../../src/components/artist/ArtistStore';
-import Marketplace from './marketplace';
 
 const MarketplacePage = () => (
   <ArtistStoreProvider>
-    <Marketplace />
+    {/* Replace with the actual Marketplace component logic */}
+    <div>Marketplace Component</div>
   </ArtistStoreProvider>
 );
 

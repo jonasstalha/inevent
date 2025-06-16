@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { StyleSheet, View, Text, ScrollView, FlatList, TextInput, TouchableOpacity, ActivityIndicator, RefreshControl, Animated, FlatListProps } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, FlatList, TextInput, TouchableOpacity, ActivityIndicator, RefreshControl, Animated, FlatListProps, Modal } from 'react-native';
 import * as Animatable from 'react-native-animatable';
 import { debounce } from 'lodash';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Search as SearchIcon, Filter, X, ArrowLeft } from 'lucide-react-native';
+import { Store as SearchIcon, Filter, X, ArrowLeft, Calendar, DollarSign, Sliders } from 'lucide-react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useApp } from '@/src/context/AppContext';
 import { Theme } from '@/src/constants/theme';
@@ -21,9 +22,10 @@ const transformGigData = (gig: Gig) => ({
   description: gig.description,
   price: `$${gig.basePrice}`,
   image: gig.images[0] || 'https://via.placeholder.com/300',
+  rating: gig.rating,
 });
 
-export default function SearchScreen() {
+export default function MarketplaceScreen() {
   const { artists, gigs } = useApp();
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -36,7 +38,11 @@ export default function SearchScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [searchInput, setSearchInput] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [priceRange, setPriceRange] = useState({ min: '', max: '' });
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
   const scrollY = useRef(new Animated.Value(0)).current;
+  const [savedArtists, setSavedArtists] = useState<string[]>([]);
 
   const debouncedSetSearchQuery = useCallback(
     debounce((query: string) => setSearchQuery(query), 300),
@@ -56,7 +62,49 @@ export default function SearchScreen() {
   }, [params]);
 
   useEffect(() => {
-    setIsLoading(true); // Start loading
+    // Load saved artists from storage
+    const loadSavedArtists = async () => {
+      try {
+        const saved = await AsyncStorage.getItem('savedArtists');
+        if (saved) {
+          setSavedArtists(JSON.parse(saved));
+        }
+      } catch (error) {
+        console.error('Error loading saved artists:', error);
+      }
+    };
+    loadSavedArtists();
+  }, []);
+
+  const applyFilters = (gigs: Gig[]) => {
+    return gigs.filter(gig => {
+      // Category filter
+      if (selectedCategory !== 'All' && gig.category.toLowerCase() !== selectedCategory.toLowerCase()) {
+        return false;
+      }
+
+      // Price range filter
+      if (priceRange.min && gig.basePrice < Number(priceRange.min)) {
+        return false;
+      }
+      if (priceRange.max && gig.basePrice > Number(priceRange.max)) {
+        return false;
+      }
+
+      // Date range filter
+      if (dateRange.start && new Date(gig.createdAt) < new Date(dateRange.start)) {
+        return false;
+      }
+      if (dateRange.end && new Date(gig.createdAt) > new Date(dateRange.end)) {
+        return false;
+      }
+
+      return true;
+    });
+  };
+
+  useEffect(() => {
+    setIsLoading(true);
     const timeout = setTimeout(() => {
       // Filter artists
       let artistResults = [...artists];
@@ -88,18 +136,15 @@ export default function SearchScreen() {
         );
       }
 
-      if (selectedCategory !== 'All') {
-        gigResults = gigResults.filter(gig =>
-          gig.category.toLowerCase() === selectedCategory.toLowerCase()
-        );
-      }
+      // Apply additional filters
+      gigResults = applyFilters(gigResults);
 
       setFilteredGigs(gigResults);
-      setIsLoading(false); // End loading
-    }, 500); // Simulate delay
+      setIsLoading(false);
+    }, 500);
 
     return () => clearTimeout(timeout);
-  }, [searchQuery, selectedCategory, artists, gigs]);
+  }, [searchQuery, selectedCategory, priceRange, dateRange, artists, gigs]);
 
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
@@ -116,32 +161,129 @@ export default function SearchScreen() {
   const clearSearch = () => {
     setSearchInput('');
     setSearchQuery('');
+    setPriceRange({ min: '', max: '' });
+    setDateRange({ start: '', end: '' });
     router.setParams({
       query: undefined,
     });
   };
 
   const handleArtistPress = (artistId: string) => {
-    const router = useRouter();
     router.push(`/(client)/(hidden)/artist/${artistId}`);
   };
 
   const handleGigPress = (gigId: string) => {
-    const router = useRouter();
     router.push(`/(client)/(hidden)/gig/${gigId}`);
   };
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    // Simulate a refresh
     await new Promise(resolve => setTimeout(resolve, 1500));
     setRefreshing(false);
   }, []);
 
+  const handleSaveArtist = async (artistId: string) => {
+    try {
+      const newSavedArtists = savedArtists.includes(artistId)
+        ? savedArtists.filter(id => id !== artistId)
+        : [...savedArtists, artistId];
+      
+      setSavedArtists(newSavedArtists);
+      await AsyncStorage.setItem('savedArtists', JSON.stringify(newSavedArtists));
+    } catch (error) {
+      console.error('Error saving artist:', error);
+    }
+  };
+
+  const renderFilterModal = () => (
+    <Modal
+      visible={showFilters}
+      animationType="slide"
+      transparent={true}
+      onRequestClose={() => setShowFilters(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Advanced Filters</Text>
+            <TouchableOpacity onPress={() => setShowFilters(false)}>
+              <X size={24} color={Theme.colors.textDark} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.filterSection}>
+            <Text style={styles.filterTitle}>Price Range</Text>
+            <View style={styles.priceInputs}>
+              <View style={styles.inputContainer}>
+                <DollarSign size={20} color={Theme.colors.textLight} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Min"
+                  value={priceRange.min}
+                  onChangeText={(text) => setPriceRange(prev => ({ ...prev, min: text }))}
+                  keyboardType="numeric"
+                />
+              </View>
+              <Text style={styles.rangeSeparator}>to</Text>
+              <View style={styles.inputContainer}>
+                <DollarSign size={20} color={Theme.colors.textLight} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Max"
+                  value={priceRange.max}
+                  onChangeText={(text) => setPriceRange(prev => ({ ...prev, max: text }))}
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.filterSection}>
+            <Text style={styles.filterTitle}>Date Range</Text>
+            <View style={styles.dateInputs}>
+              <View style={styles.inputContainer}>
+                <Calendar size={20} color={Theme.colors.textLight} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Start Date"
+                  value={dateRange.start}
+                  onChangeText={(text) => setDateRange(prev => ({ ...prev, start: text }))}
+                />
+              </View>
+              <Text style={styles.rangeSeparator}>to</Text>
+              <View style={styles.inputContainer}>
+                <Calendar size={20} color={Theme.colors.textLight} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="End Date"
+                  value={dateRange.end}
+                  onChangeText={(text) => setDateRange(prev => ({ ...prev, end: text }))}
+                />
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.modalActions}>
+            <TouchableOpacity 
+              style={[styles.modalButton, styles.clearSearchButton]} 
+              onPress={clearSearch}
+            >
+              <Text style={styles.clearButtonText}>Clear All</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.modalButton, styles.applyButton]} 
+              onPress={() => setShowFilters(false)}
+            >
+              <Text style={styles.applyButtonText}>Apply Filters</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <View style={styles.container}>
- 
-
       <Animatable.View
         animation="slideInDown"
         duration={500}
@@ -172,9 +314,9 @@ export default function SearchScreen() {
 
         <TouchableOpacity
           style={styles.filterButton}
-          onPress={() => {/* Add filter functionality */ }}
+          onPress={() => setShowFilters(true)}
         >
-          <Filter size={20} color={Theme.colors.primary} />
+          <Sliders size={20} color={Theme.colors.primary} />
         </TouchableOpacity>
       </Animatable.View>
 
@@ -234,7 +376,7 @@ export default function SearchScreen() {
                   <GigCard
                     gig={transformGigData(item)}
                     onPress={handleGigPress}
-                    onBuy={() => { }}
+                    onBuy={handleGigPress}
                   />
                 </Animatable.View>
               )}
@@ -277,7 +419,11 @@ export default function SearchScreen() {
                   duration={300}
                   style={styles.artistCardContainer}
                 >
-                  <ArtistCard artist={item} onPress={handleArtistPress} onHire={() => { }} />
+                  <ArtistCard 
+                    artist={item} 
+                    onSave={handleSaveArtist}
+                    isSaved={savedArtists.includes(item.id)}
+                  />
                 </Animatable.View>
               )}
               contentContainerStyle={styles.listContent}
@@ -308,6 +454,8 @@ export default function SearchScreen() {
           )}
         </Animatable.View>
       )}
+
+      {renderFilterModal()}
     </View>
   );
 }
@@ -462,5 +610,94 @@ const styles = StyleSheet.create({
     fontSize: Theme.typography.fontSize.md,
     color: Theme.colors.textLight,
     marginTop: Theme.spacing.md,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Theme.colors.background,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: Theme.spacing.lg,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Theme.spacing.lg,
+  },
+  modalTitle: {
+    fontFamily: Theme.typography.fontFamily.bold,
+    fontSize: Theme.typography.fontSize.lg,
+    color: Theme.colors.textDark,
+  },
+  filterSection: {
+    marginBottom: Theme.spacing.lg,
+  },
+  filterTitle: {
+    fontFamily: Theme.typography.fontFamily.medium,
+    fontSize: Theme.typography.fontSize.md,
+    color: Theme.colors.textDark,
+    marginBottom: Theme.spacing.sm,
+  },
+  priceInputs: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  dateInputs: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  inputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Theme.colors.card,
+    borderRadius: Theme.borderRadius.md,
+    paddingHorizontal: Theme.spacing.md,
+    height: 45,
+  },
+  input: {
+    flex: 1,
+    marginLeft: Theme.spacing.sm,
+    fontFamily: Theme.typography.fontFamily.regular,
+    fontSize: Theme.typography.fontSize.md,
+    color: Theme.colors.text,
+  },
+  rangeSeparator: {
+    marginHorizontal: Theme.spacing.sm,
+    color: Theme.colors.textLight,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: Theme.spacing.lg,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: Theme.spacing.md,
+    borderRadius: Theme.borderRadius.md,
+    alignItems: 'center',
+  },
+  clearSearchButton: {
+    backgroundColor: Theme.colors.card,
+    marginRight: Theme.spacing.sm,
+  },
+  applyButton: {
+    backgroundColor: Theme.colors.primary,
+    marginLeft: Theme.spacing.sm,
+  },
+  clearButtonText: {
+    fontFamily: Theme.typography.fontFamily.medium,
+    fontSize: Theme.typography.fontSize.md,
+    color: Theme.colors.textDark,
+  },
+  applyButtonText: {
+    fontFamily: Theme.typography.fontFamily.medium,
+    fontSize: Theme.typography.fontSize.md,
+    color: Theme.colors.background,
   },
 });

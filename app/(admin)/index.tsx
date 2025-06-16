@@ -8,7 +8,7 @@ import { useAuth } from '@/src/context/AuthContext';
 import { Theme } from '@/src/constants/theme';
 import { Card } from '@/src/components/common/Card';
 
-export default function AdminDashboardScreen() {
+export default function AdminDashboard() {
   const { user } = useAuth();
   const { artists, orders, gigs, tickets } = useApp();
   const router = useRouter();

@@ -1,5 +1,6 @@
 // src/firebase/firebaseConfig.ts
-import { initializeApp, getApps } from 'firebase/app';
+import { initializeApp } from '@react-native-firebase/app';
+import auth from '@react-native-firebase/auth';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyC7Mr5CAQPoqAIMLh-IefxsVugqyI8PYXA',
@@ -10,6 +11,11 @@ const firebaseConfig = {
   appId: '1:780609459655:android:c4535e1323f166ef7f75e2',
 };
 
-if (!getApps().length) {
+// Initialize Firebase
+if (!auth().app) {
   initializeApp(firebaseConfig);
 }
+
+// Export the auth instance
+export const firebaseAuth = auth();
+export const app = auth().app;

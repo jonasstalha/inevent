@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Image,
@@ -6,6 +6,7 @@ import {
   Text,
   StyleSheet,
   Dimensions,
+  Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -13,6 +14,29 @@ const { width, height } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const logoAnimation = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(logoAnimation, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.spring(logoAnimation, {
+        toValue: 1.1,
+        friction: 3,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+      Animated.spring(logoAnimation, {
+        toValue: 1,
+        friction: 3,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const handlePress = () => {
     router.replace({ pathname: '/(client)' }); // Go to main client app index
@@ -20,6 +44,18 @@ export default function WelcomeScreen() {
 
   const handleArtistPress = () => {
     router.replace({ pathname: '/artist' }); // Go to artist side
+  };
+
+  const logoStyle = {
+    opacity: logoAnimation,
+    transform: [
+      {
+        scale: logoAnimation.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0.8, 1],
+        }),
+      },
+    ],
   };
 
   return (
@@ -31,6 +67,13 @@ export default function WelcomeScreen() {
       />
       <View style={styles.overlay} />
       <View style={styles.content}>
+        <Animated.View style={[styles.logoContainer, logoStyle]}>
+          <Image 
+            source={require('../assets/indexpage/primary-logo.png')} 
+            style={styles.logo} 
+            resizeMode="contain" 
+          />
+        </Animated.View>
         <TouchableOpacity style={styles.button} onPress={handlePress}>
           <Text style={styles.buttonText}>Enter App</Text>
         </TouchableOpacity>
@@ -63,6 +106,13 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
     paddingBottom: 40,
+  },
+  logoContainer: {
+    marginBottom: 40,
+  },
+  logo: {
+    width: width * 0.7,
+    height: width * 0.3,
   },
   button: {
     backgroundColor: '#6a0dad', // vibrant violet

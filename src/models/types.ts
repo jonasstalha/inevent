@@ -35,10 +35,16 @@ export interface Gig {
   basePrice: number;
   images: string[];
   category: string;
-  options: GigOption[];
+  options: {
+    id: string;
+    title: string;
+    description: string;
+    price: number;
+  }[];
   rating: number;
   reviewCount: number;
   createdAt: Date;
+  location?: string;
 }
 
 export interface GigOption {

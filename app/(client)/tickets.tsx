@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -33,7 +33,7 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
 // Define the Ticket type for strong typing
-interface Ticket {
+export interface Ticket {
   id: number;
   title: string;
   city: string;
@@ -119,6 +119,84 @@ const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('en-GB', options);
 };
 
+// Add the AutoScrollingPopular component
+const AutoScrollingPopular: React.FC<{ tickets: Ticket[] }> = ({ tickets }) => {
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const router = useRouter();
+
+  const cardWidth = screenWidth * 0.8; // 80% of screen width
+  const popularTickets = tickets.filter(ticket => ticket.popular);
+  const totalCards = popularTickets.length;
+
+  useEffect(() => {
+    const scrollToNext = () => {
+      const nextIndex = (currentIndex + 1) % totalCards;
+      setCurrentIndex(nextIndex);
+      scrollViewRef.current?.scrollTo({
+        x: nextIndex * cardWidth,
+        animated: true,
+      });
+    };
+
+    const interval = setInterval(scrollToNext, 3000);
+    return () => clearInterval(interval);
+  }, [currentIndex, cardWidth, totalCards]);
+
+  return (
+    <ScrollView
+      ref={scrollViewRef}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={styles.popularScroll}
+      scrollEventThrottle={16}
+      snapToInterval={cardWidth}
+      decelerationRate="fast"
+      snapToAlignment="center"
+      contentContainerStyle={{
+        paddingHorizontal: (screenWidth - cardWidth) / 2,
+      }}
+    >
+      {popularTickets.map((ticket, index) => (
+        <Animated.View 
+          key={ticket.id}
+          entering={FadeInRight.delay(index * 100).springify()}
+          style={[styles.popularTicketCard, { width: cardWidth, marginHorizontal: 8 }]}
+        >
+          <Image source={ticket.image} style={styles.popularTicketImage} />
+          <View style={styles.popularTicketOverlay}>
+            <BlurView intensity={70} style={styles.blurContainer}>
+              <View style={styles.popularTicketContent}>
+                <View>
+                  <Text style={styles.popularTicketTitle}>{ticket.title}</Text>
+                  <View style={styles.ticketMeta}>
+                    <MaterialCommunityIcons name="map-marker" size={16} color="#FFFFFF" />
+                    <Text style={styles.metaText}>{ticket.city}</Text>
+                  </View>
+                  <View style={styles.ticketMeta}>
+                    <Ionicons name="time-outline" size={16} color="#FFFFFF" />
+                    <Text style={styles.metaText}>{formatDate(ticket.date)} | {ticket.time}</Text>
+                  </View>
+                </View>
+                <View style={styles.ticketBottom}>
+                  <Text style={styles.popularTicketPrice}>{ticket.price} MAD</Text>
+                  <TouchableOpacity 
+                    style={styles.viewDetailsButton}
+                    onPress={() => router.push({ pathname: '/(client)/(hidden)/ticket/[ticket]', params: { ticket: ticket.id.toString() } })}
+                  >
+                    <Text style={styles.viewDetailsText}>View</Text>
+                    <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </BlurView>
+          </View>
+        </Animated.View>
+      ))}
+    </ScrollView>
+  );
+};
+
 const TicketsScreen = () => {
   const router = useRouter();
   const navigation = useNavigation();
@@ -174,43 +252,6 @@ const TicketsScreen = () => {
       return keywords.some(keyword => ticket.title.includes(keyword));
     });
   };
-
-  // Popular ticket card for horizontal scrolling
-  const renderPopularTicketCard: import('react-native').ListRenderItem<Ticket> = ({ item, index }) => (
-    <Animated.View 
-      entering={FadeInRight.delay(index * 100).springify()}
-      style={styles.popularTicketCard}
-    >
-      <Image source={item.image} style={styles.popularTicketImage} />
-      <View style={styles.popularTicketOverlay}>
-        <BlurView intensity={70} style={styles.blurContainer}>
-          <View style={styles.popularTicketContent}>
-            <View>
-              <Text style={styles.popularTicketTitle}>{item.title}</Text>
-              <View style={styles.ticketMeta}>
-                <MaterialCommunityIcons name="map-marker" size={16} color="#FFFFFF" />
-                <Text style={styles.metaText}>{item.city}</Text>
-              </View>
-              <View style={styles.ticketMeta}>
-                <Ionicons name="time-outline" size={16} color="#FFFFFF" />
-                <Text style={styles.metaText}>{formatDate(item.date)} | {item.time}</Text>
-              </View>
-            </View>
-            <View style={styles.ticketBottom}>
-              <Text style={styles.popularTicketPrice}>{item.price} MAD</Text>
-              <TouchableOpacity 
-                style={styles.viewDetailsButton}
-                onPress={() => router.push({ pathname: '/(client)/(hidden)/ticket/[ticket]', params: { ticket: item.id.toString() } })}
-              >
-                <Text style={styles.viewDetailsText}>View</Text>
-                <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </BlurView>
-      </View>
-    </Animated.View>
-  );
 
   // Regular ticket card for vertical list
   const renderTicketCard: import('react-native').ListRenderItem<Ticket> = ({ item, index }) => (
@@ -339,21 +380,15 @@ const TicketsScreen = () => {
           />
         </View>
 
-        <Text style={styles.sectionTitle}>
-          <Ionicons name="flame" size={20} color="#FF4757" /> Popular Events
-        </Text>
-        
-        <AnimatedFlatList
-          data={tickets.filter((ticket) => ticket.popular)}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={renderPopularTicketCard}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          snapToInterval={screenWidth * 0.85 + 15}
-          decelerationRate="fast"
-          contentContainerStyle={styles.popularTicketsList}
-        />
+        <View style={styles.popularSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Popular Events</Text>
+            <TouchableOpacity onPress={() => {}}>
+              <Text style={styles.seeAllText}>See All</Text>
+            </TouchableOpacity>
+          </View>
+          <AutoScrollingPopular tickets={tickets} />
+        </View>
 
         <View style={styles.upcomingHeader}>
           <Text style={styles.sectionTitle}>
@@ -500,81 +535,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 12,
   },
-  popularTicketsList: {
-    paddingHorizontal: 20,
+  popularSection: {
+    marginBottom: 20,
   },
-  popularTicketCard: {
-    width: screenWidth * 0.85,
-    height: 200,
-    marginRight: 15,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  popularTicketImage: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 16,
-  },
-  popularTicketOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '50%',
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
-    overflow: 'hidden',
-  },
-  blurContainer: {
-    flex: 1,
-    padding: 15,
-    justifyContent: 'flex-end',
-  },
-  popularTicketContent: {
-    justifyContent: 'space-between',
-    flex: 1,
-  },
-  popularTicketTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 5,
-  },
-  ticketMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 5,
-  },
-  metaText: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    marginLeft: 5,
-  },
-  ticketBottom: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 5,
-  },
-  popularTicketPrice: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  viewDetailsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-  },
-  viewDetailsText: {
-    color: '#FFFFFF',
-    fontWeight: '500',
-    marginRight: 5,
-  },
-  upcomingHeader: {
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -710,6 +674,87 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: '#6C63FF',
     fontWeight: '500',
+  },
+  popularScroll: {
+    height: 200,
+  },
+  popularTicketCard: {
+    width: screenWidth * 0.85,
+    height: 200,
+    marginRight: 15,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  popularTicketImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 16,
+  },
+  popularTicketOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    overflow: 'hidden',
+  },
+  blurContainer: {
+    flex: 1,
+    padding: 15,
+    justifyContent: 'flex-end',
+  },
+  popularTicketContent: {
+    justifyContent: 'space-between',
+    flex: 1,
+  },
+  popularTicketTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 5,
+  },
+  ticketMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  metaText: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    marginLeft: 5,
+  },
+  ticketBottom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 5,
+  },
+  popularTicketPrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  viewDetailsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+  },
+  viewDetailsText: {
+    color: '#FFFFFF',
+    fontWeight: '500',
+    marginRight: 5,
+  },
+  upcomingHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingRight: 20,
+    marginBottom: 5,
   },
 });
 

@@ -1,5 +1,7 @@
 import React, { createContext, useContext } from 'react';
 import { Gig, Artist, Order, Ticket } from '../models/types';
+import { Theme } from '../constants/theme';
+import { Colors } from '../constants/colors';
 
 // Mock data for development purposes
 const MOCK_ARTISTS: Artist[] = [
@@ -147,20 +149,20 @@ const MOCK_TICKETS: Ticket[] = [
   },
 ];
 
-interface AppContextType {
+export interface AppContextType {
+  theme: typeof Theme;
   artists: Artist[];
   gigs: Gig[];
   orders: Order[];
   tickets: Ticket[];
+  setArtists: (artists: Artist[]) => void;
+  setGigs: (gigs: Gig[]) => void;
+  setOrders: (orders: Order[]) => void;
+  setTickets: (tickets: Ticket[]) => void;
   getArtistById: (id: string) => Artist | undefined;
-  getGigById: (id: string) => Gig | undefined;
-  getGigsByArtistId: (artistId: string) => Gig[];
-  getOrdersByClientId: (clientId: string) => Order[];
-  getOrdersByArtistId: (artistId: string) => Order[];
-  getTicketsByArtistId: (artistId: string) => Ticket[];
 }
 
-const AppContext = createContext<AppContextType | undefined>(undefined);
+export const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Get artist by ID
@@ -196,6 +198,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider
       value={{
+        theme: Theme.light,
         artists: MOCK_ARTISTS,
         gigs: MOCK_GIGS,
         orders: MOCK_ORDERS,

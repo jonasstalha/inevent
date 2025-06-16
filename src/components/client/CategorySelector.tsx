@@ -12,7 +12,7 @@ const CATEGORIES = [
   { name: 'Conference', icon: 'briefcase' },
   { name: "Evenement d'entreprise", icon: 'users' },
   { name: 'Kermesse', icon: 'smile' },
-  { name: 'Henna', icon: 'leaf' },
+  { name: 'Henna', icon: 'sparkles' },
   { name: 'Photographie', icon: 'camera' },
   { name: 'Animation', icon: 'film' },
   { name: 'Decoration', icon: 'award' },
