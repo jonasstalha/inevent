@@ -6,6 +6,8 @@ import { useArtistStore } from './ArtistStore';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import {  Alert } from 'react-native';
+import CalendarPage from './CalendarPage';
 
 const ArtistMobileApp = () => {
   const insets = useSafeAreaInsets();
@@ -260,7 +262,7 @@ const ArtistMobileApp = () => {
           </View>
           <TouchableOpacity 
             style={styles.viewProfileButton}
-            onPress={() => router.push('/artist/settings/profile')}
+            onPress={() => router.push('/artist/public-profile')}
           >
             <Text style={styles.viewProfileText}>👁️ View Public Profile</Text>
           </TouchableOpacity>
@@ -479,123 +481,337 @@ const ArtistMobileApp = () => {
     </ScrollView>
   );
 
-  // Calendar/Tickets Page Component
-  const CalendarPage = () => (
-    <ScrollView style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Upcoming Events */}
-      <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Upcoming Events</Text>
-        <View style={styles.eventCard}>
-          <View style={styles.eventHeader}>
-            <View style={styles.eventDate}>
-              <Text style={styles.eventDay}>15</Text>
-              <Text style={styles.eventMonth}>JUN</Text>
-            </View>
-            <View style={styles.eventInfo}>
-              <Text style={styles.eventTitle}>Summer Music Festival</Text>
-              <Text style={styles.eventLocation}>📍 Central Park, New York</Text>
-              <Text style={styles.eventTime}>🕒 7:00 PM - 11:00 PM</Text>
-            </View>
-          </View>
-          <View style={styles.eventStats}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>150</Text>
-              <Text style={styles.statLabel}>Tickets Sold</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>$3,750</Text>
-              <Text style={styles.statLabel}>Revenue</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>85%</Text>
-              <Text style={styles.statLabel}>Capacity</Text>
-            </View>
-          </View>
+const OrderManagementPage = () => {
+  const [orders, setOrders] = useState([
+    {
+      id: 1,
+      clientName: "John Smith",
+      type: "service",
+      service: "Live Performance",
+      date: "2024-07-20",
+      time: "8:00 PM",
+      price: 1500,
+      clientPrice: 1200,
+      message: "Looking for acoustic set for wedding reception",
+      status: "pending",
+      timestamp: "2 hours ago"
+    },
+    {
+      id: 2,
+      clientName: "Sarah Johnson",
+      type: "ticket",
+      eventName: "Summer Music Festival",
+      quantity: 5,
+      ticketType: "VIP",
+      price: 250,
+      clientPrice: 200,
+      message: "Can we get group discount?",
+      status: "pending",
+      timestamp: "4 hours ago"
+    },
+    {
+      id: 3,
+      clientName: "Mike Wilson",
+      type: "service",
+      service: "Recording Session",
+      date: "2024-07-15",
+      time: "2:00 PM",
+      price: 800,
+      clientPrice: null,
+      message: "Need vocals for my track, studio session preferred",
+      status: "pending",
+      timestamp: "1 day ago"
+    }
+  ]);
+
+  const [filter, setFilter] = useState('all'); // all, pending, accepted, declined
+  const [counterOffer, setCounterOffer] = useState<{ [key: number]: string }>({});
+
+  const handleAcceptOrder = (orderId: number) => {
+    setOrders(orders.map(order => 
+      order.id === orderId 
+        ? { ...order, status: 'accepted' }
+        : order
+    ));
+    Alert.alert("Success", "Order accepted successfully!");
+  };
+
+  const handleDeclineOrder = (orderId: number) => {
+    setOrders(orders.map(order => 
+      order.id === orderId 
+        ? { ...order, status: 'declined' }
+        : order
+    ));
+    Alert.alert("Order Declined", "Order has been declined.");
+  };
+
+  const handleCounterOffer = (orderId: number) => {
+    const newPrice = counterOffer[orderId];
+    if (!newPrice) {
+      Alert.alert("Error", "Please enter a counter offer price");
+      return;
+    }
+    
+    setOrders(orders.map(order => 
+      order.id === orderId 
+        ? { ...order, price: parseFloat(newPrice), status: 'counter_offered' }
+        : order
+    ));
+    setCounterOffer({ ...counterOffer, [orderId]: '' });
+    Alert.alert("Counter Offer Sent", `New price of $${newPrice} has been sent to client`);
+  };
+
+  const filteredOrders = orders.filter(order => {
+    if (filter === 'all') return true;
+    return order.status === filter;
+  });
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return '#ff9500';
+      case 'accepted': return '#34c759';
+      case 'declined': return '#ff3b30';
+      case 'counter_offered': return '#007aff';
+      default: return '#666';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'pending': return 'time-outline';
+      case 'accepted': return 'checkmark-circle';
+      case 'declined': return 'close-circle';
+      case 'counter_offered': return 'swap-horizontal';
+      default: return 'help-circle';
+    }
+  };
+
+ const CalendarPage = () => (
+    <ScrollView style={styles.container}>
+      {/* Header Stats */}
+      <View style={styles.statsContainer}>
+        <View style={styles.statCard}>
+          <Ionicons name="mail-unread" size={24} color="#ff9500" />
+          <Text style={styles.statValue}>{orders.filter(o => o.status === 'pending').length}</Text>
+          <Text style={styles.statLabel}>Pending</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Ionicons name="checkmark-circle" size={24} color="#34c759" />
+          <Text style={styles.statValue}>{orders.filter(o => o.status === 'accepted').length}</Text>
+          <Text style={styles.statLabel}>Accepted</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Ionicons name="cash" size={24} color="#6a0dad" />
+          <Text style={styles.statValue}>
+            ${orders.filter(o => o.status === 'accepted').reduce((sum, o) => sum + o.price, 0)}
+          </Text>
+          <Text style={styles.statLabel}>Revenue</Text>
         </View>
       </View>
 
-      {/* Ticket Management */}
-      <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Ticket Management</Text>
-        <View style={styles.ticketTypeCard}>
-          <View style={styles.ticketTypeHeader}>
-            <Text style={styles.ticketTypeTitle}>VIP Pass</Text>
-            <Text style={styles.ticketTypePrice}>$50</Text>
-          </View>
-          <View style={styles.ticketTypeStats}>
-            <View style={styles.ticketStat}>
-              <Text style={styles.ticketStatValue}>45/100</Text>
-              <Text style={styles.ticketStatLabel}>Sold</Text>
-            </View>
-            <View style={styles.ticketStat}>
-              <Text style={styles.ticketStatValue}>$2,250</Text>
-              <Text style={styles.ticketStatLabel}>Revenue</Text>
-            </View>
-          </View>
-          <TouchableOpacity style={styles.editTicketButton}>
-            <Ionicons name="pencil" size={20} color="#6a0dad" />
-            <Text style={styles.editTicketText}>Edit Ticket</Text>
+      {/* Filter Tabs */}
+      <View style={styles.filterContainer}>
+        {['all', 'pending', 'accepted', 'declined'].map(status => (
+          <TouchableOpacity 
+            key={status}
+            style={[styles.filterTab, filter === status && styles.activeFilterTab]}
+            onPress={() => setFilter(status)}
+          >
+            <Text style={[styles.filterText, filter === status && styles.activeFilterText]}>
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+            </Text>
           </TouchableOpacity>
-        </View>
+        ))}
       </View>
 
-      {/* Create New Event */}
-      <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Create New Event</Text>
-        <TextInput 
-          placeholder="Event Title"
-          style={styles.input}
-          placeholderTextColor="#666"
-        />
-        <TextInput 
-          placeholder="Event Description"
-          style={[styles.input, styles.textArea]}
-          multiline
-          placeholderTextColor="#666"
-        />
-        <TextInput 
-          placeholder="Date (DD/MM/YYYY)"
-          style={styles.input}
-          placeholderTextColor="#666"
-        />
-        <TextInput 
-          placeholder="Time"
-          style={styles.input}
-          placeholderTextColor="#666"
-        />
-        <TouchableOpacity style={styles.createEventButton}>
-          <Text style={styles.createEventText}>Create Event <Text style={{color:'#ff4444', fontWeight:'bold'}}>(-10 credits)</Text></Text>
+      {/* Orders List */}
+      <View style={styles.ordersContainer}>
+        <Text style={styles.sectionTitle}>
+          {filter === 'all' ? 'All Orders' : `${filter.charAt(0).toUpperCase() + filter.slice(1)} Orders`}
+        </Text>
+        
+        {filteredOrders.map(order => (
+          <View key={order.id} style={styles.orderCard}>
+            {/* Order Header */}
+            <View style={styles.orderHeader}>
+              <View style={styles.clientInfo}>
+                <Text style={styles.clientName}>{order.clientName}</Text>
+                <Text style={styles.orderTime}>{order.timestamp}</Text>
+              </View>
+              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(order.status) }]}>
+                <Ionicons name={getStatusIcon(order.status)} size={16} color="white" />
+                <Text style={styles.statusText}>{order.status.replace('_', ' ')}</Text>
+              </View>
+            </View>
+
+            {/* Order Details */}
+            <View style={styles.orderDetails}>
+              <View style={styles.orderType}>
+                <Ionicons 
+                  name={order.type === 'service' ? 'musical-notes' : 'ticket'} 
+                  size={20} 
+                  color="#6a0dad" 
+                />
+                <Text style={styles.orderTypeText}>
+                  {order.type === 'service' ? order.service : `${order.quantity}x ${order.ticketType} Tickets`}
+                </Text>
+              </View>
+              
+              {order.date && (
+                <Text style={styles.orderDate}>📅 {order.date} at {order.time}</Text>
+              )}
+              
+              {order.eventName && (
+                <Text style={styles.eventName}>🎵 {order.eventName}</Text>
+              )}
+            </View>
+
+            {/* Price Information */}
+            <View style={styles.priceContainer}>
+              <View style={styles.priceRow}>
+                <Text style={styles.priceLabel}>Your Price:</Text>
+                <Text style={styles.yourPrice}>${order.price}</Text>
+              </View>
+              {order.clientPrice && (
+                <View style={styles.priceRow}>
+                  <Text style={styles.priceLabel}>Client Offer:</Text>
+                  <Text style={styles.clientPrice}>${order.clientPrice}</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Client Message */}
+            {order.message && (
+              <View style={styles.messageContainer}>
+                <Text style={styles.messageLabel}>Message:</Text>
+                <Text style={styles.messageText}>"{order.message}"</Text>
+              </View>
+            )}
+
+            {/* Action Buttons */}
+            {order.status === 'pending' && (
+              <View style={styles.actionContainer}>
+                <TouchableOpacity 
+                  style={styles.acceptButton}
+                  onPress={() => handleAcceptOrder(order.id)}
+                >
+                  <Ionicons name="checkmark" size={20} color="white" />
+                  <Text style={styles.buttonText}>Accept</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={styles.declineButton}
+                  onPress={() => handleDeclineOrder(order.id)}
+                >
+                  <Ionicons name="close" size={20} color="white" />
+                  <Text style={styles.buttonText}>Decline</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Counter Offer Section */}
+            {order.status === 'pending' && order.clientPrice && order.clientPrice < order.price && (
+              <View style={styles.counterOfferContainer}>
+                <Text style={styles.counterOfferLabel}>Counter Offer:</Text>
+                <View style={styles.counterOfferRow}>
+                  <TextInput
+                    style={styles.counterOfferInput}
+                    placeholder="Enter price"
+                    keyboardType="numeric"
+                    value={counterOffer[order.id] || ''}
+                    onChangeText={(text) => setCounterOffer({...counterOffer, [order.id]: text})}
+                  />
+                  <TouchableOpacity 
+                    style={styles.counterOfferButton}
+                    onPress={() => handleCounterOffer(order.id)}
+                  >
+                    <Text style={styles.counterOfferButtonText}>Send</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+        ))}
+
+        {filteredOrders.length === 0 && (
+          <View style={styles.emptyState}>
+            <Ionicons name="mail-open-outline" size={48} color="#ccc" />
+            <Text style={styles.emptyStateText}>No {filter === 'all' ? '' : filter} orders found</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Quick Actions */}
+      <View style={styles.quickActions}>
+        <Text style={styles.sectionTitle}>Quick Actions</Text>
+        <TouchableOpacity style={styles.quickActionButton}>
+          <Ionicons name="add-circle" size={24} color="#6a0dad" />
+          <Text style={styles.quickActionText}>Create Service Package</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.quickActionButton}>
+          <Ionicons name="ticket" size={24} color="#6a0dad" />
+          <Text style={styles.quickActionText}>Add New Event Tickets</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.quickActionButton}>
+          <Ionicons name="settings" size={24} color="#6a0dad" />
+          <Text style={styles.quickActionText}>Pricing Settings</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
   );
+} // <-- Add this closing brace to end OrderManagementPage function
 
-  // Analytics Page Component
+
+  // Enhanced Analytics Page Component
+  const [analyticsFilter, setAnalyticsFilter] = useState<'all' | 'services' | 'tickets'>('all');
+  const [showDetails, setShowDetails] = useState(false);
   const AnalyticsPage = () => (
-    <ScrollView style={[styles.container, { paddingTop: insets.top }]}>
+    <ScrollView style={[styles.container, { paddingTop: insets.top }]}> 
+      {/* Filter Options */}
+      <View style={{flexDirection:'row',justifyContent:'center',marginBottom:18}}>
+        {['all','services','tickets'].map(opt => (
+          <TouchableOpacity
+            key={opt}
+            style={{
+              backgroundColor: analyticsFilter === opt ? '#6a0dad' : '#fff',
+              paddingVertical:10,paddingHorizontal:22,borderRadius:22,marginHorizontal:6,
+              borderWidth:1,
+              borderColor: analyticsFilter === opt ? '#6a0dad' : '#e0e0e0',
+              shadowColor: analyticsFilter === opt ? '#6a0dad' : '#000',
+              shadowOpacity: analyticsFilter === opt ? 0.15 : 0.05,
+              shadowRadius: 4,
+              elevation: analyticsFilter === opt ? 3 : 1,
+            }}
+            onPress={() => setAnalyticsFilter(opt as any)}
+            activeOpacity={0.85}
+          >
+            <Text style={{color: analyticsFilter === opt ? 'white' : '#6a0dad',fontWeight:'bold',fontSize:15}}>
+              {opt.charAt(0).toUpperCase() + opt.slice(1)}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       {/* Overview Stats */}
-      <View style={styles.statsGrid}>
+      <View style={[styles.statsGrid, {marginBottom:18}]}> 
         <View style={styles.statCard}>
           <View style={styles.statIconContainer}>
             <Ionicons name="ticket" size={24} color="#6a0dad" />
           </View>
-          <Text style={styles.statNumber}>1,234</Text>
-          <Text style={styles.statLabel}>Total Tickets Sold</Text>
+          <Text style={styles.statNumber}>{analyticsFilter === 'tickets' ? '1,234' : analyticsFilter === 'services' ? '890' : '2,124'}</Text>
+          <Text style={styles.statLabel}>Total {analyticsFilter === 'services' ? 'Services' : analyticsFilter === 'tickets' ? 'Tickets' : 'Sales'}</Text>
         </View>
         <View style={styles.statCard}>
           <View style={styles.statIconContainer}>
             <Ionicons name="cash" size={24} color="#4CAF50" />
           </View>
-          <Text style={styles.statNumber}>$12,345</Text>
+          <Text style={styles.statNumber}>{analyticsFilter === 'tickets' ? '$12,345' : analyticsFilter === 'services' ? '$8,900' : '$21,245'}</Text>
           <Text style={styles.statLabel}>Total Revenue</Text>
         </View>
         <View style={styles.statCard}>
           <View style={styles.statIconContainer}>
             <Ionicons name="people" size={24} color="#2196F3" />
           </View>
-          <Text style={styles.statNumber}>567</Text>
+          <Text style={styles.statNumber}>{analyticsFilter === 'tickets' ? '567' : analyticsFilter === 'services' ? '320' : '887'}</Text>
           <Text style={styles.statLabel}>Active Customers</Text>
         </View>
         <View style={styles.statCard}>
@@ -605,50 +821,111 @@ const ArtistMobileApp = () => {
           <Text style={styles.statNumber}>4.8</Text>
           <Text style={styles.statLabel}>Average Rating</Text>
         </View>
-      </View>
-
-      {/* Revenue Chart */}
-      <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Revenue Overview</Text>
-        <View style={styles.chartContainer}>
-          <View style={styles.chartBar}>
-            <View style={[styles.chartFill, { height: '60%' }]} />
-            <Text style={styles.chartLabel}>Jan</Text>
+        <View style={styles.statCard}>
+          <View style={styles.statIconContainer}>
+            <Ionicons name="trending-up" size={24} color="#00b894" />
           </View>
-          <View style={styles.chartBar}>
-            <View style={[styles.chartFill, { height: '80%' }]} />
-            <Text style={styles.chartLabel}>Feb</Text>
+          <Text style={styles.statNumber}>8.2%</Text>
+          <Text style={styles.statLabel}>Conversion Rate</Text>
+        </View>
+        <View style={styles.statCard}>
+          <View style={styles.statIconContainer}>
+            <Ionicons name="pricetag" size={24} color="#fdcb6e" />
           </View>
-          <View style={styles.chartBar}>
-            <View style={[styles.chartFill, { height: '40%' }]} />
-            <Text style={styles.chartLabel}>Mar</Text>
-          </View>
-          <View style={styles.chartBar}>
-            <View style={[styles.chartFill, { height: '90%' }]} />
-            <Text style={styles.chartLabel}>Apr</Text>
-          </View>
-          <View style={styles.chartBar}>
-            <View style={[styles.chartFill, { height: '70%' }]} />
-            <Text style={styles.chartLabel}>May</Text>
-          </View>
-          <View style={styles.chartBar}>
-            <View style={[styles.chartFill, { height: '85%' }]} />
-            <Text style={styles.chartLabel}>Jun</Text>
-          </View>
+          <Text style={styles.statNumber}>{analyticsFilter === 'tickets' ? '$320' : analyticsFilter === 'services' ? '$410' : '$365'}</Text>
+          <Text style={styles.statLabel}>Avg. Order Value</Text>
         </View>
       </View>
-
+      <View style={{height:1,backgroundColor:'#eee',marginVertical:10}} />
+      {/* Revenue Trend Chart */}
+      <View style={[styles.sectionCard, {marginBottom:18, shadowColor:'#6a0dad', shadowOpacity:0.08, shadowRadius:8, elevation:2}]}> 
+        <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+          <Text style={[styles.sectionTitle, {fontSize:17}]}>Revenue Trend (Last 6 Months)</Text>
+          <TouchableOpacity onPress={()=>setShowDetails(v=>!v)}>
+            <Text style={{color:'#6a0dad',fontWeight:'bold',fontSize:14}}>{showDetails ? 'Hide Details' : 'Show Details'}</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={[styles.chartContainer, {paddingVertical:8}]}> 
+          {[60, 80, 40, 90, 70, 85].map((h, i) => (
+            <View key={i} style={[styles.chartBar, {marginHorizontal:4}]}> 
+              <View style={{
+                height: `${h}%`,
+                backgroundColor: i === 5 ? '#00b894' : '#6a0dad',
+                borderTopLeftRadius: 8,
+                borderTopRightRadius: 8,
+                shadowColor: '#6a0dad',
+                shadowOpacity: 0.12,
+                shadowRadius: 4,
+                elevation: 2,
+                width: 22,
+                alignSelf:'center',
+              }} />
+              <Text style={[styles.chartLabel, {fontSize:12,marginTop:4}]}>{['Jan','Feb','Mar','Apr','May','Jun'][i]}</Text>
+            </View>
+          ))}
+        </View>
+        {showDetails && (
+          <View style={{marginTop:12}}>
+            <Text style={{color:'#888',fontSize:13,marginBottom:2}}>Highest: $8,500 (Apr) • Lowest: $3,200 (Mar)</Text>
+            <Text style={{color:'#888',fontSize:13}}>Growth: +18% since January</Text>
+          </View>
+        )}
+      </View>
+      <View style={{height:1,backgroundColor:'#eee',marginVertical:10}} />
+      {/* Most Popular Service/Ticket */}
+      <View style={[styles.sectionCard, {marginBottom:18, shadowColor:'#6a0dad', shadowOpacity:0.08, shadowRadius:8, elevation:2}]}> 
+        <Text style={[styles.sectionTitle, {fontSize:17,marginBottom:8}]}>Most Popular</Text>
+        <View style={{flexDirection:'row',alignItems:'center',marginBottom:12}}>
+          <Ionicons name="musical-notes" size={22} color="#6a0dad" style={{marginRight:8}} />
+          <Text style={{fontWeight:'bold',fontSize:15}}>Live Performance</Text>
+          <Text style={{marginLeft:8,color:'#888',fontSize:13}}>• 320 sales</Text>
+        </View>
+        <View style={{flexDirection:'row',alignItems:'center'}}>
+          <Ionicons name="ticket" size={22} color="#fdcb6e" style={{marginRight:8}} />
+          <Text style={{fontWeight:'bold',fontSize:15}}>VIP Ticket</Text>
+          <Text style={{marginLeft:8,color:'#888',fontSize:13}}>• 210 sold</Text>
+        </View>
+      </View>
+      <View style={{height:1,backgroundColor:'#eee',marginVertical:10}} />
+      {/* Recent Orders/Sales */}
+      <View style={[styles.sectionCard, {marginBottom:18, shadowColor:'#6a0dad', shadowOpacity:0.08, shadowRadius:8, elevation:2}]}> 
+        <Text style={[styles.sectionTitle, {fontSize:17,marginBottom:8}]}>Recent Orders</Text>
+        <View style={{marginBottom:12}}>
+          <View style={{flexDirection:'row',alignItems:'center',marginBottom:8}}>
+            <Ionicons name="person" size={18} color="#6a0dad" style={{marginRight:6}} />
+            <Text style={{fontWeight:'bold',fontSize:14}}>Sarah Johnson</Text>
+            <Text style={{marginLeft:8,color:'#888',fontSize:13}}>VIP Ticket • $200</Text>
+            <Text style={{marginLeft:8,color:'#34c759',fontSize:13}}>Accepted</Text>
+          </View>
+          <View style={{flexDirection:'row',alignItems:'center',marginBottom:8}}>
+            <Ionicons name="person" size={18} color="#6a0dad" style={{marginRight:6}} />
+            <Text style={{fontWeight:'bold',fontSize:14}}>John Smith</Text>
+            <Text style={{marginLeft:8,color:'#888',fontSize:13}}>Live Performance • $1500</Text>
+            <Text style={{marginLeft:8,color:'#ff9500',fontSize:13}}>Pending</Text>
+          </View>
+          <View style={{flexDirection:'row',alignItems:'center'}}>
+            <Ionicons name="person" size={18} color="#6a0dad" style={{marginRight:6}} />
+            <Text style={{fontWeight:'bold',fontSize:14}}>Mike Wilson</Text>
+            <Text style={{marginLeft:8,color:'#888',fontSize:13}}>Recording Session • $800</Text>
+            <Text style={{marginLeft:8,color:'#ff3b30',fontSize:13}}>Declined</Text>
+          </View>
+        </View>
+        <TouchableOpacity style={{alignSelf:'flex-end',padding:8}}>
+          <Text style={{color:'#6a0dad',fontWeight:'bold',fontSize:14}}>View All</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={{height:1,backgroundColor:'#eee',marginVertical:10}} />
       {/* Popular Events */}
-      <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Popular Events</Text>
+      <View style={[styles.sectionCard, {marginBottom:24, shadowColor:'#6a0dad', shadowOpacity:0.08, shadowRadius:8, elevation:2}]}> 
+        <Text style={[styles.sectionTitle, {fontSize:17,marginBottom:8}]}>Popular Events</Text>
         <View style={styles.popularEventCard}>
           <Image 
             source={{ uri: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3' }}
             style={styles.popularEventImage}
           />
           <View style={styles.popularEventInfo}>
-            <Text style={styles.popularEventTitle}>Summer Music Festival</Text>
-            <Text style={styles.popularEventStats}>1,200 tickets sold • $24,000 revenue</Text>
+            <Text style={[styles.popularEventTitle, {fontSize:15}]}>Summer Music Festival</Text>
+            <Text style={[styles.popularEventStats, {fontSize:13}]}>1,200 tickets sold • $24,000 revenue</Text>
           </View>
         </View>
       </View>
@@ -734,9 +1011,7 @@ const ArtistMobileApp = () => {
       case 'calendar':
         return <CalendarPage />;
       case 'ticket':
-        // Dynamically import the Ticket page
-        const TicketPage = require('./Ticket').default;
-        return <TicketPage />;
+        return require('./Ticket').default ? React.createElement(require('./Ticket').default) : null;
       case 'analytics':
         return <AnalyticsPage />;
       case 'settings':
@@ -1284,6 +1559,241 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 8,
   },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 20,
+  },
+  filterTab: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  activeFilterTab: {
+    backgroundColor: '#6a0dad',
+  },
+  filterText: {
+    color: '#666',
+    fontWeight: '500',
+  },
+  activeFilterText: {
+    color: 'white',
+  },
+  ordersContainer: {
+    marginBottom: 20,
+  },
+  orderCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  orderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  clientInfo: {
+    flex: 1,
+  },
+  clientName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  orderTime: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+  orderDetails: {
+    marginBottom: 12,
+  },
+  orderType: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  orderTypeText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+    marginLeft: 8,
+  },
+  orderDate: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 2,
+  },
+  eventName: {
+    fontSize: 14,
+    color: '#666',
+  },
+  priceContainer: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  priceLabel: {
+    fontSize: 14,
+    color: '#666',
+  },
+  yourPrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#34c759',
+  },
+  clientPrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#ff9500',
+  },
+  messageContainer: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  messageLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginBottom: 4,
+  },
+  messageText: {
+    fontSize: 14,
+    color: '#333',
+    fontStyle: 'italic',
+  },
+  actionContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  acceptButton: {
+    flex: 1,
+    backgroundColor: '#34c759',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  declineButton: {
+    flex: 1,
+    backgroundColor: '#ff3b30',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    marginLeft: 4,
+  },
+  counterOfferContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  counterOfferLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+    marginBottom: 8,
+  },
+  counterOfferRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  counterOfferInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    marginRight: 12,
+    fontSize: 16,
+  },
+  counterOfferButton: {
+    backgroundColor: '#007aff',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  counterOfferButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  emptyState: {
+    alignItems: 'center',
+    padding: 40,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 12,
+  },
+  quickActions: {
+    marginBottom: 20,
+  },
+  quickActionButton: {
+    backgroundColor: 'white',
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  quickActionText: {
+    fontSize: 16,
+    color: '#333',
+    marginLeft: 12,
+    fontWeight: '500',
+  },
+
 });
 
 export default ArtistMobileApp;
